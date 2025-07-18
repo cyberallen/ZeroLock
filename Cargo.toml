@@ -1,0 +1,21 @@
+[package]
+name = "zerolock"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk = "0.12"
+candid = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+ic-stable-structures = "0.5"
+
+[dependencies.ic-cdk-macros]
+version = "0.9"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

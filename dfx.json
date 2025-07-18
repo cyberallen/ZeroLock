@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "canisters": {
+    "bounty_factory": {
+      "type": "rust",
+      "package": "zerolock",
+      "candid": "src/bounty_factory.did"
+    },
+    "vault": {
+      "type": "rust",
+      "package": "zerolock",
+      "candid": "src/vault.did"
+    },
+    "judge": {
+      "type": "rust",
+      "package": "zerolock",
+      "candid": "src/judge.did"
+    },
+    "leaderboard": {
+      "type": "rust",
+      "package": "zerolock",
+      "candid": "src/leaderboard.did"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
+    }
+  }
+}
