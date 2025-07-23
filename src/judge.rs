@@ -5,7 +5,7 @@ use crate::types::*;
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, storable::Bound};
 use serde::Serialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -484,7 +484,7 @@ pub async fn resolve_dispute(
         disputer: dispute.disputer,
         reason: dispute.reason,
         evidence: dispute.evidence,
-        status: resolution,
+        status: resolution.clone(),
         created_at: dispute.created_at,
         resolved_at: Some(current_time()),
         resolution: Some(resolution_text),
@@ -726,9 +726,8 @@ async fn trigger_settlement(challenge_id: u64, winner: Principal) -> ApiResponse
     }
 }
 
-/// Heartbeat function for continuous monitoring
-#[heartbeat]
-pub async fn heartbeat() {
+/// Periodic monitoring function (called manually or by external scheduler)
+pub async fn judge_heartbeat() {
     perform_periodic_checks().await;
 }
 
@@ -742,11 +741,8 @@ impl Storable for MonitoringState {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
 
-impl BoundedStorable for MonitoringState {
-    const MAX_SIZE: u32 = 512;
-    const IS_FIXED_SIZE: bool = false;
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Storable for BalanceSnapshot {
@@ -757,11 +753,8 @@ impl Storable for BalanceSnapshot {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
 
-impl BoundedStorable for BalanceSnapshot {
-    const MAX_SIZE: u32 = 256;
-    const IS_FIXED_SIZE: bool = false;
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Storable for AutomatedRule {
@@ -772,11 +765,8 @@ impl Storable for AutomatedRule {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
 
-impl BoundedStorable for AutomatedRule {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Storable for DisputeCase {
@@ -787,15 +777,12 @@ impl Storable for DisputeCase {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
 
-impl BoundedStorable for DisputeCase {
-    const MAX_SIZE: u32 = 2048;
-    const IS_FIXED_SIZE: bool = false;
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 // Vec<BalanceSnapshot> wrapper for stable storage
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct StorableVecBalanceSnapshot(pub Vec<BalanceSnapshot>);
 
 impl Storable for StorableVecBalanceSnapshot {
@@ -806,9 +793,6 @@ impl Storable for StorableVecBalanceSnapshot {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
 
-impl BoundedStorable for StorableVecBalanceSnapshot {
-    const MAX_SIZE: u32 = 8192;
-    const IS_FIXED_SIZE: bool = false;
+    const BOUND: Bound = Bound::Unbounded;
 }

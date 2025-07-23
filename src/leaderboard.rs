@@ -4,7 +4,7 @@ use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, storable::Bound};
 use std::cell::RefCell;
 use std::borrow::Cow;
 
@@ -22,12 +22,11 @@ impl Storable for StorableString {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         StorableString(candid::decode_one(&bytes).unwrap())
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for StorableString {
-    const MAX_SIZE: u32 = 256;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 #[derive(CandidType, Serialize, Deserialize, Clone, Debug)]
 pub struct StorableVecU64(pub Vec<u64>);
@@ -40,12 +39,11 @@ impl Storable for StorableVecU64 {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         StorableVecU64(candid::decode_one(&bytes).unwrap())
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for StorableVecU64 {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Memory management
 type Memory = VirtualMemory<DefaultMemoryImpl>;
@@ -105,11 +103,8 @@ impl Storable for Achievement {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
 
-impl BoundedStorable for Achievement {
-    const MAX_SIZE: u32 = 512;
-    const IS_FIXED_SIZE: bool = false;
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(CandidType, Serialize, Deserialize, Clone, Debug)]
@@ -543,7 +538,7 @@ fn calculate_reputation_gain(bounty_amount: u64) -> u64 {
  * Sets the BountyFactory canister reference
  */
 #[update]
-pub fn set_bounty_factory(canister: Principal) -> Result<(), ZeroLockError> {
+pub fn set_bounty_factory_for_leaderboard(canister: Principal) -> Result<(), ZeroLockError> {
     // In production, this should be restricted to governance
     BOUNTY_FACTORY_CANISTER.with(|bf| {
         *bf.borrow_mut() = Some(canister);

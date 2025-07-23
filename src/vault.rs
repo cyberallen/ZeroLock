@@ -5,7 +5,7 @@ use crate::types::*;
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, storable::Bound};
 use serde::Serialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -23,15 +23,6 @@ const MAX_LOCK_DURATION: i64 = 30 * 24 * 3600 * 1_000_000_000; // 30 days in nan
 const MIN_LOCK_AMOUNT: u64 = 1_000_000; // 0.01 ICP in e8s
 
 // Vault-specific types
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub struct Balance {
-    pub owner: Principal,
-    pub token_type: TokenType,
-    pub available: u64,
-    pub locked: u64,
-    pub total: u64,
-}
-
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct LockRequest {
     pub challenge_id: u64,
@@ -712,4 +703,61 @@ fn is_authorized_canister(canister: &Principal) -> bool {
             .iter()
             .any(|(_, authorized)| authorized == *canister)
     })
+}
+
+// Storable implementations for stable storage
+use std::borrow::Cow;
+
+impl Storable for LockInfo {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
+}
+
+
+
+impl Storable for LockStatus {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
+}
+
+
+
+impl Storable for VaultStats {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
+}
+
+
+
+impl Storable for UnlockReason {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
