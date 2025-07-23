@@ -4,7 +4,7 @@
 use candid::{CandidType, Deserialize, Principal};
 use serde::Serialize;
 use std::collections::HashMap;
-use ic_stable_structures::{Storable, BoundedStorable};
+use ic_stable_structures::{Storable, storable::Bound};
 use std::borrow::Cow;
 
 // Token types supported by the platform
@@ -247,7 +247,31 @@ impl<T> From<Result<T, ZeroLockError>> for ApiResponse<T> {
     }
 }
 
+// Vault-specific types
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub struct Balance {
+    pub owner: Principal,
+    pub token_type: TokenType,
+    pub available: u64,
+    pub locked: u64,
+    pub total: u64,
+}
+
 // Storable implementations for stable storage
+impl Storable for Balance {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
+}
+
+
+
 impl Storable for Challenge {
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
@@ -256,12 +280,11 @@ impl Storable for Challenge {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for Challenge {
-    const MAX_SIZE: u32 = 2048;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for UserProfile {
     fn to_bytes(&self) -> Cow<[u8]> {
@@ -271,12 +294,11 @@ impl Storable for UserProfile {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for UserProfile {
-    const MAX_SIZE: u32 = 512;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for Transaction {
     fn to_bytes(&self) -> Cow<[u8]> {
@@ -286,12 +308,11 @@ impl Storable for Transaction {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for Transaction {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for AttackAttempt {
     fn to_bytes(&self) -> Cow<[u8]> {
@@ -301,12 +322,11 @@ impl Storable for AttackAttempt {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for AttackAttempt {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for Evaluation {
     fn to_bytes(&self) -> Cow<[u8]> {
@@ -316,27 +336,15 @@ impl Storable for Evaluation {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for Evaluation {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
 
-impl Storable for Principal {
-    fn to_bytes(&self) -> Cow<[u8]> {
-        Cow::Borrowed(self.as_slice())
-    }
 
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Principal::from_slice(&bytes)
-    }
-}
 
-impl BoundedStorable for Principal {
-    const MAX_SIZE: u32 = 29; // Principal max size is 29 bytes
-    const IS_FIXED_SIZE: bool = false;
-}
+
+
 
 // String wrapper for stable storage
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -350,12 +358,11 @@ impl Storable for StorableString {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         StorableString(String::from_utf8(bytes.into_owned()).unwrap())
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for StorableString {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Vec<u64> wrapper for stable storage
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -376,12 +383,11 @@ impl Storable for StorableVecU64 {
             .collect();
         StorableVecU64(vec)
     }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
-impl BoundedStorable for StorableVecU64 {
-    const MAX_SIZE: u32 = 8192;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Utility functions
 pub fn is_valid_difficulty_level(level: u8) -> bool {
