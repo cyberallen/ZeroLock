@@ -80,7 +80,7 @@ pub struct ChallengeStats {
     pub cancelled: u64,
 }
 
-// Global state
+// Global state - BountyFactory uses MemoryId 0-9
 thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));

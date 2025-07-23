@@ -129,38 +129,38 @@ pub enum UnlockReason {
     AdminOverride(String),
 }
 
-// Global state
+// Global state - Judge uses MemoryId 20-29
 thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
     
     static EVALUATIONS: RefCell<EvaluationStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(20)))
         )
     );
     
     static MONITORING_STATES: RefCell<MonitoringStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(21)))
         )
     );
     
     static DISPUTES: RefCell<DisputeStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(22)))
         )
     );
     
     static AUTOMATED_RULES: RefCell<RuleStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(23)))
         )
     );
     
     static BALANCE_HISTORY: RefCell<BalanceHistoryStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(4)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(24)))
         )
     );
     
@@ -810,4 +810,22 @@ impl Storable for StorableVecBalanceSnapshot {
 impl BoundedStorable for StorableVecBalanceSnapshot {
     const MAX_SIZE: u32 = 16384;
     const IS_FIXED_SIZE: bool = false;
+}
+
+// Public functions for unified canister setup
+
+/// Sets the BountyFactory canister reference (internal function for unified canister)
+pub fn set_bounty_factory_canister(canister_id: Principal) {
+    BOUNTY_FACTORY_CANISTER.with(|bf| {
+        *bf.borrow_mut() = Some(canister_id);
+    });
+    ic_cdk::println!("Judge: BountyFactory canister set to {}", canister_id.to_text());
+}
+
+/// Sets the Vault canister reference (internal function for unified canister)
+pub fn set_vault_canister_internal(canister_id: Principal) {
+    VAULT_CANISTER.with(|vc| {
+        *vc.borrow_mut() = Some(canister_id);
+    });
+    ic_cdk::println!("Judge: Vault canister set to {}", canister_id.to_text());
 }

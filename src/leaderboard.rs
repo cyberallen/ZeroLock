@@ -143,7 +143,7 @@ pub struct UserStats {
     pub new_users_last_week: u64,
 }
 
-// State variables
+// State variables - Leaderboard uses MemoryId 30-39
 thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
         MemoryManager::init(DefaultMemoryImpl::default())
@@ -151,25 +151,25 @@ thread_local! {
     
     static USER_PROFILES: RefCell<UserProfilesMap> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(20)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(30)))
         )
     );
     
     static DISPLAY_NAMES: RefCell<DisplayNamesMap> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(21)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(31)))
         )
     );
     
     static ACHIEVEMENTS: RefCell<AchievementsMap> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(22)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(32)))
         )
     );
     
     static CHALLENGE_HISTORY: RefCell<ChallengeHistoryMap> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(23)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(33)))
         )
     );
     
@@ -576,4 +576,13 @@ pub fn set_bounty_factory_for_leaderboard(canister: Principal) -> Result<(), Zer
     
     ic_cdk::println!("BountyFactory canister set: {:?}", canister);
     Ok(())
+}
+
+/**
+ * Sets the BountyFactory canister reference for unified canister setup
+ */
+pub fn set_bounty_factory_canister(canister_id: Principal) {
+    BOUNTY_FACTORY_CANISTER.with(|bf| {
+        *bf.borrow_mut() = Some(canister_id);
+    });
 }

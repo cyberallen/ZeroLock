@@ -106,32 +106,32 @@ impl BoundedStorable for StorablePrincipal {
     const IS_FIXED_SIZE: bool = false;
 }
 
-// Global state
+// Global state - Vault uses MemoryId 10-19
 thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
     
     static TRANSACTIONS: RefCell<TransactionStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(10)))
         )
     );
     
     static BALANCES: RefCell<BalanceStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(11)))
         )
     );
     
     static LOCKS: RefCell<LockStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(12)))
         )
     );
     
     static AUTHORIZED_CANISTERS: RefCell<AuthorizedCanisterStorage> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(13)))
         )
     );
     

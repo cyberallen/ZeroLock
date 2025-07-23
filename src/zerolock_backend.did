@@ -1,0 +1,245 @@
+// ZeroLock Platform - Unified Canister Candid Interface
+
+type Principal = principal;
+
+type TokenType = variant {
+  ICP;
+  ICRC1 : principal;
+};
+
+type ChallengeStatus = variant {
+  Created;
+  Active;
+  Completed;
+  Expired;
+  Cancelled;
+};
+
+type Challenge = record {
+  id : nat64;
+  company : principal;
+  target_canister : opt principal;
+  wasm_code : vec nat8;
+  candid_interface : text;
+  bounty_amount : nat64;
+  token_type : TokenType;
+  start_time : int64;
+  end_time : int64;
+  status : ChallengeStatus;
+  description : text;
+  difficulty_level : nat8;
+  created_at : int64;
+  updated_at : int64;
+};
+
+type AttackAttempt = record {
+  id : nat64;
+  challenge_id : nat64;
+  hacker : principal;
+  timestamp : int64;
+  success : bool;
+  proof : opt vec nat8;
+  gas_used : nat64;
+};
+
+type TransactionType = variant {
+  Lock;
+  Unlock;
+  Payout;
+  Refund;
+  Fee;
+};
+
+type TransactionStatus = variant {
+  Pending;
+  Completed;
+  Failed;
+  Cancelled;
+};
+
+type Transaction = record {
+  id : nat64;
+  transaction_type : TransactionType;
+  challenge_id : nat64;
+  from : principal;
+  to : principal;
+  amount : nat64;
+  token_type : TokenType;
+  timestamp : int64;
+  status : TransactionStatus;
+};
+
+type JudgeDecision = variant {
+  Valid;
+  Invalid;
+  Disputed;
+  Pending;
+};
+
+type Evaluation = record {
+  id : nat64;
+  challenge_id : nat64;
+  attack_attempt_id : nat64;
+  decision : JudgeDecision;
+  reasoning : text;
+  timestamp : int64;
+  evaluator : principal;
+};
+
+type UserRole = variant {
+  Company;
+  Hacker;
+  Admin;
+};
+
+type UserProfile = record {
+  user_principal : principal;
+  username : text;
+  reputation : nat64;
+  total_earned : nat64;
+  challenges_completed : nat64;
+  role : UserRole;
+  created_at : nat64;
+};
+
+type Balance = record {
+  owner : principal;
+  token_type : TokenType;
+  available : nat64;
+  locked : nat64;
+  total : nat64;
+};
+
+type PlatformStats = record {
+  total_challenges : nat64;
+  active_challenges : nat64;
+  completed_challenges : nat64;
+  total_bounty_paid : nat64;
+  total_bounties_paid : nat64;
+  successful_attacks : nat64;
+  total_hackers : nat64;
+  total_companies : nat64;
+};
+
+type AchievementType = variant {
+  FirstBlood;
+  TopEarner;
+  SerialHacker;
+  QuickSolver;
+  GenerousCompany;
+  ActiveContributor;
+};
+
+type Achievement = record {
+  id : nat64;
+  achievement_type : AchievementType;
+  recipient : principal;
+  timestamp : int64;
+  description : text;
+  challenge_id : opt nat64;
+};
+
+type LeaderboardEntry = record {
+  rank : nat64;
+  user_principal : principal;
+  display_name : opt text;
+  reputation : nat64;
+  challenges_completed : nat64;
+  total_earned : nat64;
+  created_at : int64;
+};
+
+type CompanyLeaderboardEntry = record {
+  rank : nat64;
+  user_principal : principal;
+  display_name : opt text;
+  reputation : nat64;
+  challenges_completed : nat64;
+  total_earned : nat64;
+  created_at : int64;
+};
+
+type UserStats = record {
+  total_users : nat64;
+  active_hackers : nat64;
+  active_companies : nat64;
+  new_users_last_week : nat64;
+};
+
+type ZeroLockError = variant {
+  NotFound : text;
+  Unauthorized : text;
+  InvalidInput : text;
+  InternalError : text;
+  ResourceLimit : text;
+  InvalidState : text;
+  InsufficientFunds : text;
+  NetworkError : text;
+  AlreadyExists : text;
+};
+
+type Result = variant { Ok; Err : ZeroLockError };
+type ChallengeResult = variant { Ok : Challenge; Err : ZeroLockError };
+type ChallengesResult = variant { Ok : vec Challenge; Err : ZeroLockError };
+type PlatformStatsResult = variant { Ok : PlatformStats; Err : ZeroLockError };
+type IdResult = variant { Ok : nat64; Err : ZeroLockError };
+type AttackAttemptResult = variant { Ok : AttackAttempt; Err : ZeroLockError };
+type AttackAttemptsResult = variant { Ok : vec AttackAttempt; Err : ZeroLockError };
+type BalanceResult = variant { Ok : Balance; Err : ZeroLockError };
+type BalancesResult = variant { Ok : vec Balance; Err : ZeroLockError };
+type TransactionsResult = variant { Ok : vec Transaction; Err : ZeroLockError };
+type UserProfileResult = variant { Ok : record { UserProfile; opt text; vec Achievement; vec nat64 }; Err : ZeroLockError };
+
+service : {
+  // BountyFactory functions
+  create_challenge : (text, vec nat8, text, nat64, TokenType, nat64, nat8) -> (IdResult);
+  get_challenge : (nat64) -> (ChallengeResult) query;
+  get_challenges : () -> (ChallengesResult) query;
+  get_challenges_by_company : (principal) -> (ChallengesResult) query;
+  activate_challenge : (nat64) -> (Result);
+  complete_challenge : (nat64, principal) -> (Result);
+  cancel_challenge : (nat64) -> (Result);
+  get_platform_stats : () -> (PlatformStatsResult) query;
+  get_challenge_count : () -> (nat64) query;
+  set_admin : (principal) -> (Result);
+  
+  // Vault functions
+  deposit : (nat64, TokenType) -> (Result);
+  withdraw : (nat64, TokenType) -> (Result);
+  lock_funds : (nat64, nat64, TokenType) -> (Result);
+  get_balance : (principal, TokenType) -> (BalanceResult) query;
+  get_all_balances : (principal) -> (BalancesResult) query;
+  get_transaction_history : (principal) -> (TransactionsResult) query;
+  get_locked_funds : (nat64) -> (BalanceResult) query;
+  add_authorized_canister : (principal) -> (Result);
+  get_vault_stats : () -> (record { total_locked : nat64; total_transactions : nat64 }) query;
+  set_vault_admin : (principal) -> (Result);
+  get_transaction_count : () -> (nat64) query;
+  set_platform_fee : (nat64) -> (Result);
+  
+  // Judge functions
+  start_monitoring : (nat64) -> (Result);
+  submit_attack_attempt : (nat64, vec nat8, opt vec nat8) -> (IdResult);
+  evaluate_attack : (nat64, JudgeDecision, text) -> (Result);
+  create_dispute : (nat64, text) -> (Result);
+  resolve_dispute : (nat64, JudgeDecision, text) -> (Result);
+  get_evaluations : (nat64) -> (vec Evaluation) query;
+  get_monitoring_status : (nat64) -> (opt text) query;
+  get_disputes : (nat64) -> (vec record { nat64; text; int64; opt JudgeDecision }) query;
+  get_attack_attempts : (nat64) -> (AttackAttemptsResult) query;
+  set_vault_canister : (principal) -> (Result);
+  set_bounty_factory_canister : (principal) -> (Result);
+  get_judge_stats : () -> (record { total_evaluations : nat64; pending_disputes : nat64 }) query;
+  
+  // Leaderboard functions
+  register_user : (text, UserRole) -> (Result);
+  update_user_stats : (principal, nat64, nat64) -> (Result);
+  award_achievement : (principal, AchievementType, opt nat64) -> (Result);
+  set_display_name : (text) -> (Result);
+  get_hacker_leaderboard : (nat64) -> (vec LeaderboardEntry) query;
+  get_company_leaderboard : (nat64) -> (vec CompanyLeaderboardEntry) query;
+  get_user_profile : (principal) -> (UserProfileResult) query;
+  get_platform_stats_leaderboard : () -> (PlatformStats) query;
+  get_user_stats : () -> (UserStats) query;
+  set_bounty_factory_for_leaderboard : (principal) -> (Result);
+}

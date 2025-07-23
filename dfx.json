@@ -1,25 +1,10 @@
 {
   "version": 1,
   "canisters": {
-    "bounty_factory": {
+    "zerolock_backend": {
       "type": "rust",
       "package": "zerolock",
-      "candid": "src/bounty_factory.did"
-    },
-    "vault": {
-      "type": "rust",
-      "package": "zerolock",
-      "candid": "src/vault.did"
-    },
-    "judge": {
-      "type": "rust",
-      "package": "zerolock",
-      "candid": "src/judge.did"
-    },
-    "leaderboard": {
-      "type": "rust",
-      "package": "zerolock",
-      "candid": "src/leaderboard.did"
+      "candid": "src/zerolock_backend.did"
     }
   },
   "defaults": {
