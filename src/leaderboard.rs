@@ -2,13 +2,32 @@ use ic_cdk::api::time;
 use ic_cdk::{caller, query, update};
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, storable::Bound};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
 use std::cell::RefCell;
 use std::borrow::Cow;
 
 use crate::types::*;
+
+// Wrapper types for stable storage
+#[derive(CandidType, Serialize, Deserialize, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct StorablePrincipal(pub Principal);
+
+impl Storable for StorablePrincipal {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(self.0.as_slice().to_vec())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        StorablePrincipal(Principal::from_slice(&bytes))
+    }
+}
+
+impl BoundedStorable for StorablePrincipal {
+    const MAX_SIZE: u32 = 29; // Principal max size is 29 bytes
+    const IS_FIXED_SIZE: bool = false;
+}
 
 // Wrapper types for stable storage
 #[derive(CandidType, Serialize, Deserialize, Clone, Debug)]
@@ -22,8 +41,11 @@ impl Storable for StorableString {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         StorableString(candid::decode_one(&bytes).unwrap())
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for StorableString {
+    const MAX_SIZE: u32 = 1024;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 
@@ -39,18 +61,21 @@ impl Storable for StorableVecU64 {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         StorableVecU64(candid::decode_one(&bytes).unwrap())
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for StorableVecU64 {
+    const MAX_SIZE: u32 = 8192;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 
 
 // Memory management
 type Memory = VirtualMemory<DefaultMemoryImpl>;
-type UserProfilesMap = StableBTreeMap<Principal, UserProfile, Memory>;
-type DisplayNamesMap = StableBTreeMap<Principal, StorableString, Memory>;
+type UserProfilesMap = StableBTreeMap<StorablePrincipal, UserProfile, Memory>;
+type DisplayNamesMap = StableBTreeMap<StorablePrincipal, StorableString, Memory>;
 type AchievementsMap = StableBTreeMap<u64, Achievement, Memory>;
-type ChallengeHistoryMap = StableBTreeMap<Principal, StorableVecU64, Memory>;
+type ChallengeHistoryMap = StableBTreeMap<StorablePrincipal, StorableVecU64, Memory>;
 
 // Additional types for Leaderboard
 #[derive(CandidType, Serialize, Deserialize, Clone, Debug)]
@@ -103,8 +128,11 @@ impl Storable for Achievement {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for Achievement {
+    const MAX_SIZE: u32 = 2048;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 #[derive(CandidType, Serialize, Deserialize, Clone, Debug)]
@@ -160,7 +188,7 @@ pub fn register_user(role: UserRole) -> Result<(), ZeroLockError> {
     let caller = caller();
     
     // Check if user already exists
-    if USER_PROFILES.with(|profiles| profiles.borrow().contains_key(&caller)) {
+    if USER_PROFILES.with(|profiles| profiles.borrow().contains_key(&StorablePrincipal(caller))) {
         return Err(ZeroLockError::AlreadyExists("User already registered".to_string()));
     }
     
@@ -176,7 +204,7 @@ pub fn register_user(role: UserRole) -> Result<(), ZeroLockError> {
     };
     
     USER_PROFILES.with(|profiles| {
-        profiles.borrow_mut().insert(caller, profile);
+        profiles.borrow_mut().insert(StorablePrincipal(caller), profile);
     });
     
     ic_cdk::println!("User registered: {:?} as {:?}", caller, role);
@@ -200,12 +228,12 @@ pub fn set_display_name(name: String) -> Result<(), ZeroLockError> {
     }
     
     // Check if user exists
-    if !USER_PROFILES.with(|profiles| profiles.borrow().contains_key(&caller)) {
+    if !USER_PROFILES.with(|profiles| profiles.borrow().contains_key(&StorablePrincipal(caller))) {
         return Err(ZeroLockError::NotFound("User not registered".to_string()));
     }
     
     DISPLAY_NAMES.with(|names| {
-        names.borrow_mut().insert(caller, StorableString(name.clone()));
+        names.borrow_mut().insert(StorablePrincipal(caller), StorableString(name.clone()));
     });
     
     ic_cdk::println!("Display name set: {} for {:?}", name, caller);
@@ -233,26 +261,26 @@ pub fn record_successful_attack(
     // Update attacker profile
     USER_PROFILES.with(|profiles| {
         let mut profiles_map = profiles.borrow_mut();
-        if let Some(mut profile) = profiles_map.get(&attacker) {
+        if let Some(mut profile) = profiles_map.get(&StorablePrincipal(attacker)) {
             profile.challenges_completed += 1;
             profile.total_earned += bounty_amount;
             profile.reputation += calculate_reputation_gain(bounty_amount);
             // Note: last_active field doesn't exist in UserProfile, using created_at instead
-            profiles_map.insert(attacker, profile);
+            profiles_map.insert(StorablePrincipal(attacker), profile);
         }
     });
     
     // Update challenge history
     CHALLENGE_HISTORY.with(|history| {
         let mut history_map = history.borrow_mut();
-        let mut user_challenges = history_map.get(&attacker).map(|v| v.0).unwrap_or_default();
+        let mut user_challenges = history_map.get(&StorablePrincipal(attacker)).map(|v| v.0).unwrap_or_default();
         user_challenges.push(challenge_id);
-        history_map.insert(attacker, StorableVecU64(user_challenges));
+        history_map.insert(StorablePrincipal(attacker), StorableVecU64(user_challenges));
     });
     
     // Grant achievements
     let challenges_completed = USER_PROFILES.with(|profiles| {
-        profiles.borrow().get(&attacker).map(|p| p.challenges_completed).unwrap_or(0)
+        profiles.borrow().get(&StorablePrincipal(attacker)).map(|p| p.challenges_completed).unwrap_or(0)
     });
     
     if challenges_completed == 1 {
@@ -298,17 +326,17 @@ pub fn record_challenge_creation(
     // Update company profile
     USER_PROFILES.with(|profiles| {
         let mut profiles_map = profiles.borrow_mut();
-        if let Some(mut profile) = profiles_map.get(&company) {
+        if let Some(mut profile) = profiles_map.get(&StorablePrincipal(company)) {
             profile.challenges_completed += 1;
             profile.total_earned += bounty_amount;
             profile.reputation += 10; // Base reputation for creating challenge
-            profiles_map.insert(company, profile);
+            profiles_map.insert(StorablePrincipal(company), profile);
         }
     });
     
     // Grant achievements
     let created_challenges = USER_PROFILES.with(|profiles| {
-        profiles.borrow().get(&company).map(|p| p.challenges_completed).unwrap_or(0)
+        profiles.borrow().get(&StorablePrincipal(company)).map(|p| p.challenges_completed).unwrap_or(0)
     });
     
     if created_challenges == 5 {
@@ -341,6 +369,7 @@ pub fn get_hacker_leaderboard(limit: u64) -> Vec<LeaderboardEntry> {
     let mut hackers: Vec<(Principal, UserProfile)> = USER_PROFILES.with(|profiles| {
         profiles.borrow().iter()
             .filter(|(_, profile)| matches!(profile.role, UserRole::Hacker))
+            .map(|(storable_principal, profile)| (storable_principal.0, profile))
             .collect()
     });
     
@@ -353,7 +382,7 @@ pub fn get_hacker_leaderboard(limit: u64) -> Vec<LeaderboardEntry> {
         .enumerate()
         .map(|(i, (principal, profile))| {
             let display_name = DISPLAY_NAMES.with(|names| {
-                names.borrow().get(&principal).map(|s| s.0)
+                names.borrow().get(&StorablePrincipal(principal)).map(|s| s.0)
             });
             
             LeaderboardEntry {
@@ -380,6 +409,7 @@ pub fn get_company_leaderboard(limit: u64) -> Vec<CompanyLeaderboardEntry> {
     let mut companies: Vec<(Principal, UserProfile)> = USER_PROFILES.with(|profiles| {
         profiles.borrow().iter()
             .filter(|(_, profile)| matches!(profile.role, UserRole::Company))
+            .map(|(storable_principal, profile)| (storable_principal.0, profile))
             .collect()
     });
     
@@ -392,7 +422,7 @@ pub fn get_company_leaderboard(limit: u64) -> Vec<CompanyLeaderboardEntry> {
         .enumerate()
         .map(|(i, (principal, profile))| {
             let display_name = DISPLAY_NAMES.with(|names| {
-                names.borrow().get(&principal).map(|s| s.0)
+                names.borrow().get(&StorablePrincipal(principal)).map(|s| s.0)
             });
             
             CompanyLeaderboardEntry {
@@ -414,11 +444,11 @@ pub fn get_company_leaderboard(limit: u64) -> Vec<CompanyLeaderboardEntry> {
 #[query]
 pub fn get_user_profile(user: Principal) -> Result<(UserProfile, Option<String>, Vec<Achievement>, Vec<u64>), ZeroLockError> {
     let profile = USER_PROFILES.with(|profiles| {
-        profiles.borrow().get(&user)
+        profiles.borrow().get(&StorablePrincipal(user))
     }).ok_or_else(|| ZeroLockError::NotFound("User profile not found".to_string()))?;
     
     let display_name = DISPLAY_NAMES.with(|names| {
-        names.borrow().get(&user).map(|s| s.0)
+        names.borrow().get(&StorablePrincipal(user)).map(|s| s.0)
     });
     
     let user_achievements: Vec<Achievement> = ACHIEVEMENTS.with(|achievements| {
@@ -429,7 +459,7 @@ pub fn get_user_profile(user: Principal) -> Result<(UserProfile, Option<String>,
     });
     
     let user_challenges = CHALLENGE_HISTORY.with(|history| {
-        history.borrow().get(&user).map(|v| v.0).unwrap_or_default()
+        history.borrow().get(&StorablePrincipal(user)).map(|v| v.0).unwrap_or_default()
     });
     
     Ok((profile, display_name, user_achievements, user_challenges))

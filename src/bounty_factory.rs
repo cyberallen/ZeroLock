@@ -9,15 +9,47 @@ use ic_cdk::api::management_canister::main::{
 };
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
 use serde::Serialize;
 use std::cell::RefCell;
-use std::collections::HashMap;
+
+use std::borrow::Cow;
+
+// Wrapper for Principal to implement BoundedStorable
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct StorablePrincipal(pub Principal);
+
+impl From<Principal> for StorablePrincipal {
+    fn from(principal: Principal) -> Self {
+        StorablePrincipal(principal)
+    }
+}
+
+impl From<StorablePrincipal> for Principal {
+    fn from(storable: StorablePrincipal) -> Self {
+        storable.0
+    }
+}
+
+impl Storable for StorablePrincipal {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+}
+
+impl BoundedStorable for StorablePrincipal {
+    const MAX_SIZE: u32 = 29;
+    const IS_FIXED_SIZE: bool = false;
+}
 
 // Memory management
 type Memory = VirtualMemory<DefaultMemoryImpl>;
 type ChallengeStorage = StableBTreeMap<u64, Challenge, Memory>;
-type AdminStorage = StableBTreeMap<u64, Principal, Memory>;
+type AdminStorage = StableBTreeMap<u64, StorablePrincipal, Memory>;
 
 // Configuration constants
 const MAX_CHALLENGES_PER_USER: u64 = 10;
@@ -416,7 +448,7 @@ pub fn add_admin(new_admin: Principal) -> ApiResponse<()> {
     });
     
     ADMINS.with(|admins| {
-        admins.borrow_mut().insert(admin_id, new_admin)
+        admins.borrow_mut().insert(admin_id, StorablePrincipal::from(new_admin))
     });
     
     ic_cdk::println!("Admin added: {}", new_admin.to_text());
@@ -427,7 +459,7 @@ pub fn add_admin(new_admin: Principal) -> ApiResponse<()> {
 #[query]
 pub fn get_admins() -> Vec<Principal> {
     ADMINS.with(|admins| {
-        admins.borrow().iter().map(|(_, principal)| principal).collect()
+        admins.borrow().iter().map(|(_, storable_principal)| storable_principal.0).collect()
     })
 }
 
@@ -520,7 +552,7 @@ fn is_admin(principal: &Principal) -> bool {
         admins
             .borrow()
             .iter()
-            .any(|(_, admin)| admin == *principal)
+            .any(|(_, admin)| admin.0 == *principal)
     })
 }
 

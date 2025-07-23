@@ -5,17 +5,17 @@ use crate::types::*;
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, storable::Bound};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
 use serde::Serialize;
 use std::cell::RefCell;
-use std::collections::HashMap;
+
 
 // Memory management
 type Memory = VirtualMemory<DefaultMemoryImpl>;
 type TransactionStorage = StableBTreeMap<u64, Transaction, Memory>;
-type BalanceStorage = StableBTreeMap<String, Balance, Memory>;
+type BalanceStorage = StableBTreeMap<StorableString, Balance, Memory>;
 type LockStorage = StableBTreeMap<u64, LockInfo, Memory>;
-type AuthorizedCanisterStorage = StableBTreeMap<u64, Principal, Memory>;
+type AuthorizedCanisterStorage = StableBTreeMap<u64, StorablePrincipal, Memory>;
 
 // Configuration constants
 const PLATFORM_FEE_BASIS_POINTS: u64 = 250; // 2.5%
@@ -73,6 +73,37 @@ pub enum LockStatus {
     Active,
     Released,
     Expired,
+}
+
+// Wrapper for Principal to implement BoundedStorable
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct StorablePrincipal(pub Principal);
+
+impl From<Principal> for StorablePrincipal {
+    fn from(principal: Principal) -> Self {
+        StorablePrincipal(principal)
+    }
+}
+
+impl From<StorablePrincipal> for Principal {
+    fn from(storable: StorablePrincipal) -> Self {
+        storable.0
+    }
+}
+
+impl Storable for StorablePrincipal {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        std::borrow::Cow::Owned(candid::encode_one(self).unwrap())
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+}
+
+impl BoundedStorable for StorablePrincipal {
+    const MAX_SIZE: u32 = 29;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 // Global state
@@ -645,7 +676,7 @@ pub fn add_authorized_canister(canister: Principal) -> ApiResponse<()> {
     });
     
     AUTHORIZED_CANISTERS.with(|canisters| {
-        canisters.borrow_mut().insert(canister_id, canister)
+        canisters.borrow_mut().insert(canister_id, StorablePrincipal(canister))
     });
     
     ic_cdk::println!("Authorized canister added: {}", canister.to_text());
@@ -656,7 +687,7 @@ pub fn add_authorized_canister(canister: Principal) -> ApiResponse<()> {
 #[query]
 pub fn get_authorized_canisters() -> Vec<Principal> {
     AUTHORIZED_CANISTERS.with(|canisters| {
-        canisters.borrow().iter().map(|(_, principal)| principal).collect()
+        canisters.borrow().iter().map(|(_, principal)| principal.0).collect()
     })
 }
 
@@ -687,12 +718,12 @@ pub fn set_platform_fee_recipient(recipient: Principal) -> ApiResponse<()> {
 // Private helper functions
 
 /// Creates a unique key for balance storage
-fn make_balance_key(principal: &Principal, token_type: &TokenType) -> String {
+fn make_balance_key(principal: &Principal, token_type: &TokenType) -> StorableString {
     let token_str = match token_type {
         TokenType::ICP => "ICP".to_string(),
         TokenType::ICRC1(p) => format!("ICRC1:{}", p.to_text()),
     };
-    format!("{}#{}", principal.to_text(), token_str)
+    StorableString(format!("{}#{}", principal.to_text(), token_str))
 }
 
 /// Checks if a canister is authorized to call vault functions
@@ -701,7 +732,7 @@ fn is_authorized_canister(canister: &Principal) -> bool {
         canisters
             .borrow()
             .iter()
-            .any(|(_, authorized)| authorized == *canister)
+            .any(|(_, authorized)| authorized.0 == *canister)
     })
 }
 
@@ -716,8 +747,11 @@ impl Storable for LockInfo {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for LockInfo {
+    const MAX_SIZE: u32 = 1024;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 
@@ -730,8 +764,11 @@ impl Storable for LockStatus {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for LockStatus {
+    const MAX_SIZE: u32 = 256;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 
@@ -744,8 +781,11 @@ impl Storable for VaultStats {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for VaultStats {
+    const MAX_SIZE: u32 = 512;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 
@@ -758,6 +798,9 @@ impl Storable for UnlockReason {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for UnlockReason {
+    const MAX_SIZE: u32 = 1024;
+    const IS_FIXED_SIZE: bool = false;
 }

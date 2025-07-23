@@ -5,10 +5,10 @@ use crate::types::*;
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, storable::Bound};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
 use serde::Serialize;
 use std::cell::RefCell;
-use std::collections::HashMap;
+
 use std::borrow::Cow;
 
 // Memory management
@@ -741,8 +741,11 @@ impl Storable for MonitoringState {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for MonitoringState {
+    const MAX_SIZE: u32 = 1024;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 impl Storable for BalanceSnapshot {
@@ -753,8 +756,11 @@ impl Storable for BalanceSnapshot {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for BalanceSnapshot {
+    const MAX_SIZE: u32 = 512;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 impl Storable for AutomatedRule {
@@ -765,8 +771,11 @@ impl Storable for AutomatedRule {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for AutomatedRule {
+    const MAX_SIZE: u32 = 2048;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 impl Storable for DisputeCase {
@@ -777,8 +786,11 @@ impl Storable for DisputeCase {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for DisputeCase {
+    const MAX_SIZE: u32 = 4096;
+    const IS_FIXED_SIZE: bool = false;
 }
 
 // Vec<BalanceSnapshot> wrapper for stable storage
@@ -793,6 +805,9 @@ impl Storable for StorableVecBalanceSnapshot {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
+}
 
-    const BOUND: Bound = Bound::Unbounded;
+impl BoundedStorable for StorableVecBalanceSnapshot {
+    const MAX_SIZE: u32 = 16384;
+    const IS_FIXED_SIZE: bool = false;
 }
