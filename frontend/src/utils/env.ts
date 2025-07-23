@@ -2,13 +2,17 @@ import { EnvConfig } from '@/types';
 
 // 获取环境变量配置
 export const getEnvConfig = (): EnvConfig => {
+  // 统一的后端canister ID，所有功能都通过这一个canister提供
+  const backendCanisterId = import.meta.env.VITE_ZEROLOCK_BACKEND_CANISTER_ID || 'uxrrr-q7777-77774-qaaaq-cai';
+  
   return {
     IC_HOST: import.meta.env.VITE_IC_HOST || 'https://ic0.app',
     DFX_NETWORK: import.meta.env.VITE_DFX_NETWORK || 'local',
-    BOUNTY_FACTORY_CANISTER_ID: import.meta.env.VITE_BOUNTY_FACTORY_CANISTER_ID || '',
-    VAULT_CANISTER_ID: import.meta.env.VITE_VAULT_CANISTER_ID || '',
-    JUDGE_CANISTER_ID: import.meta.env.VITE_JUDGE_CANISTER_ID || '',
-    LEADERBOARD_CANISTER_ID: import.meta.env.VITE_LEADERBOARD_CANISTER_ID || '',
+    // 所有功能现在都通过统一的后端canister提供
+    BOUNTY_FACTORY_CANISTER_ID: backendCanisterId,
+    VAULT_CANISTER_ID: backendCanisterId,
+    JUDGE_CANISTER_ID: backendCanisterId,
+    LEADERBOARD_CANISTER_ID: backendCanisterId,
     INTERNET_IDENTITY_URL: import.meta.env.VITE_INTERNET_IDENTITY_URL || 'https://identity.ic0.app',
     APP_NAME: import.meta.env.VITE_APP_NAME || 'ZeroLock',
     APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
