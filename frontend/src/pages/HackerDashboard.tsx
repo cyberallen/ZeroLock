@@ -34,44 +34,48 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
     avatar: '',
     bio: 'White hat hacker focused on smart contract security research with 5 years of blockchain security experience.',
     skills: ['Solidity', 'Rust', 'Smart Contract Auditing', 'DeFi', 'Cryptography'],
-    reputation: 950,
-    rank: 1,
-    totalEarnings: 50000,
+    reputation: 850,
+    level: 8,
+    rank: 12,
+    totalEarnings: 45000,
     successfulHacks: 15,
+    participatedChallenges: 28,
+    specialties: ['Smart Contract Security', 'DeFi Protocols', 'Cross-chain Bridges'],
     totalAttempts: 23,
     joinedAt: Date.now() - 365 * 24 * 60 * 60 * 1000, // 1 year ago
-    lastActiveAt: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
     socialLinks: {
       twitter: 'https://twitter.com/cryptohacker',
       github: 'https://github.com/cryptohacker',
-      website: 'https://cryptohacker.dev',
     },
     achievements: [
       {
-        id: 1,
+        id: '1',
         title: 'First Success',
         description: 'Complete your first successful security audit',
         icon: 'trophy',
         rarity: 'Common',
+        earnedAt: Date.now() - 300 * 24 * 60 * 60 * 1000,
         unlockedAt: Date.now() - 300 * 24 * 60 * 60 * 1000,
         progress: 100,
       },
       {
-        id: 2,
+        id: '2',
         title: 'Combo Master',
         description: 'Successfully discover vulnerabilities 5 times in a row',
         icon: 'fire',
         rarity: 'Rare',
+        earnedAt: Date.now() - 100 * 24 * 60 * 60 * 1000,
         unlockedAt: Date.now() - 100 * 24 * 60 * 60 * 1000,
         progress: 100,
       },
       {
-        id: 3,
+        id: '3',
         title: 'Millionaire',
         description: 'Accumulate earnings of 100,000 ICP',
         icon: 'currency',
         rarity: 'Epic',
-        unlockedAt: null,
+        earnedAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        unlockedAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
         progress: 50,
       },
     ],
@@ -80,40 +84,52 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
   // Mock attack attempt data
   const mockAttempts: AttackAttempt[] = [
     {
-      id: 1,
-      challengeId: 1,
+      id: '1',
+      attacker: 'hacker1',
+      timestamp: Date.now() - 2 * 60 * 60 * 1000,
+      method: 'Reentrancy Attack',
+      success: false,
+      gasUsed: 50000,
       challengeTitle: 'DeFi Protocol Security Audit Challenge',
       submittedAt: Date.now() - 2 * 60 * 60 * 1000,
-      status: 'Under Review',
-      severity: 'High',
+      status: 'pending',
+      severity: 'high',
       description: 'Discovered reentrancy attack vulnerability that could lead to fund loss',
-      code: 'contract Attack { ... }',
       reward: 0,
       feedback: '',
+      hackerNickname: 'CryptoHacker',
     },
     {
-      id: 2,
-      challengeId: 2,
+      id: '2',
+      attacker: 'hacker1',
+      timestamp: Date.now() - 24 * 60 * 60 * 1000,
+      method: 'Integer Overflow',
+      success: true,
+      gasUsed: 30000,
       challengeTitle: 'NFT Marketplace Smart Contract Challenge',
       submittedAt: Date.now() - 24 * 60 * 60 * 1000,
-      status: 'Approved',
-      severity: 'Medium',
+      status: 'approved',
+      severity: 'medium',
       description: 'Integer overflow vulnerability',
-      code: 'function exploit() { ... }',
       reward: 2000,
       feedback: 'Excellent discovery! Accurate vulnerability analysis with practical fix suggestions.',
+      hackerNickname: 'CryptoHacker',
     },
     {
-      id: 3,
-      challengeId: 3,
+      id: '3',
+      attacker: 'hacker1',
+      timestamp: Date.now() - 3 * 24 * 60 * 60 * 1000,
+      method: 'Permission Check',
+      success: false,
+      gasUsed: 20000,
       challengeTitle: 'Decentralized Identity Verification System',
       submittedAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
-      status: 'Rejected',
-      severity: 'Low',
+      status: 'rejected',
+      severity: 'low',
       description: 'Insufficient permission checks',
-      code: 'if (msg.sender == owner) { ... }',
       reward: 0,
       feedback: 'This vulnerability has minimal impact and does not meet reward criteria.',
+      hackerNickname: 'CryptoHacker',
     },
   ];
 
@@ -155,19 +171,19 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
 
   const getStatusColor = (status: AttackAttempt['status']) => {
     switch (status) {
-      case 'Under Review': return 'warning';
-      case 'Approved': return 'success';
-      case 'Rejected': return 'danger';
+      case 'pending': return 'warning';
+      case 'approved': return 'success';
+      case 'rejected': return 'danger';
       default: return 'default';
     }
   };
 
   const getSeverityColor = (severity: AttackAttempt['severity']) => {
     switch (severity) {
-      case 'Critical': return 'danger';
-      case 'High': return 'danger';
-      case 'Medium': return 'warning';
-      case 'Low': return 'success';
+      case 'critical': return 'danger';
+      case 'high': return 'danger';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
       default: return 'default';
     }
   };
@@ -308,9 +324,9 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
                     {mockAttempts.slice(0, 3).map((attempt) => (
                       <div key={attempt.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div className="flex-shrink-0">
-                          {attempt.status === 'Approved' ? (
+                          {attempt.status === 'approved' ? (
                             <CheckCircleIcon className="h-6 w-6 text-success-500" />
-                          ) : attempt.status === 'Rejected' ? (
+                          ) : attempt.status === 'rejected' ? (
                             <XCircleIcon className="h-6 w-6 text-danger-500" />
                           ) : (
                             <ClockIcon className="h-6 w-6 text-warning-500" />
@@ -325,13 +341,13 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
                           </p>
                           <div className="flex items-center space-x-2 mt-2">
                             <Badge variant={getStatusColor(attempt.status)} size="sm">
-                              {attempt.status === 'Under Review' ? 'Under Review' :
-                               attempt.status === 'Approved' ? 'Approved' : 'Rejected'}
+                              {attempt.status === 'pending' ? 'Under Review' :
+                               attempt.status === 'approved' ? 'Approved' : 'Rejected'}
                             </Badge>
                             <Badge variant={getSeverityColor(attempt.severity)} size="sm">
-                              {attempt.severity === 'Critical' ? 'Critical' :
-                               attempt.severity === 'High' ? 'High' :
-                               attempt.severity === 'Medium' ? 'Medium' : 'Low'}
+                              {attempt.severity === 'critical' ? 'Critical' :
+                               attempt.severity === 'high' ? 'High' :
+                               attempt.severity === 'medium' ? 'Medium' : 'Low'}
                             </Badge>
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {formatDistanceToNow(attempt.submittedAt, { addSuffix: true, locale: zhCN })}
@@ -442,13 +458,13 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
                         </div>
                         <div className="flex flex-col items-end space-y-2">
                           <Badge variant={getStatusColor(attempt.status)}>
-                            {attempt.status === 'Under Review' ? 'Under Review' :
-                             attempt.status === 'Approved' ? 'Approved' : 'Rejected'}
+                            {attempt.status === 'pending' ? 'Under Review' :
+                             attempt.status === 'approved' ? 'Approved' : 'Rejected'}
                           </Badge>
                           <Badge variant={getSeverityColor(attempt.severity)}>
-                            {attempt.severity === 'Critical' ? 'Critical' :
-                             attempt.severity === 'High' ? 'High' :
-                             attempt.severity === 'Medium' ? 'Medium' : 'Low'}
+                            {attempt.severity === 'critical' ? 'Critical' :
+                             attempt.severity === 'high' ? 'High' :
+                             attempt.severity === 'medium' ? 'Medium' : 'Low'}
                           </Badge>
                           {attempt.reward > 0 && (
                             <div className="flex items-center space-x-1 text-success-600">
@@ -633,8 +649,8 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Website</label>
-                    <Input value={hackerProfile?.socialLinks?.website || ''} placeholder="https://yourwebsite.com" />
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">LinkedIn</label>
+                    <Input value={hackerProfile?.socialLinks?.linkedin || ''} placeholder="https://linkedin.com/in/username" />
                   </div>
                   
                   <div className="pt-4">

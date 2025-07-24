@@ -10,8 +10,8 @@ crate-type = ["cdylib"]
 ic-cdk = "0.13"
 candid = "0.10"
 serde = { version = "1.0", features = ["derive"] }
-ic-stable-structures = "0.5"
-ic-cdk-macros = "0.9"
+ic-stable-structures = "0.6"
+ic-cdk-macros = "0.13"
 
 [profile.release]
 opt-level = 3

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   MagnifyingGlassIcon,
@@ -14,14 +15,14 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import { useAppStore } from '@/stores/useAppStore';
-import { formatDistanceToNow } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+
 
 interface HomePageProps {}
 
 const HomePage: React.FC<HomePageProps> = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<ChallengeFilters>({});
+  const [filters] = useState<ChallengeFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const { challenges, setChallenges } = useAppStore();
 
@@ -167,10 +168,18 @@ const HomePage: React.FC<HomePageProps> = () => {
               Find vulnerabilities, earn rewards. Connecting the world's best security researchers with blockchain projects.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary">
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => navigate('/hacker-dashboard')}
+              >
                 Start Challenge
               </Button>
-              <Button size="lg" variant="outline">
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => navigate('/company-dashboard')}
+              >
                 Post Challenge
               </Button>
             </div>
@@ -295,7 +304,10 @@ const HomePage: React.FC<HomePageProps> = () => {
                             </span>
                           </div>
                         </div>
-                        <Button size="sm">
+                        <Button 
+                          size="sm"
+                          onClick={() => navigate(`/challenge/${challenge.id}`)}
+                        >
                           View Details
                         </Button>
                       </div>

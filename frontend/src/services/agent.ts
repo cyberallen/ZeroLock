@@ -49,7 +49,10 @@ export const createAuthClient = async (): Promise<AuthClient> => {
 // 获取Internet Identity登录URL
 export const getInternetIdentityUrl = (): string => {
   if (isLocalNetwork()) {
-    return `http://localhost:4943/?canisterId=${import.meta.env.VITE_INTERNET_IDENTITY_CANISTER_ID || 'rdmx6-jaaaa-aaaaa-aaadq-cai'}`;
+    const canisterId = import.meta.env.VITE_INTERNET_IDENTITY_CANISTER_ID || 'uxrrr-q7777-77774-qaaaq-cai';
+    console.log('Internet Identity Canister ID:', canisterId);
+    console.log('Environment variable VITE_INTERNET_IDENTITY_CANISTER_ID:', import.meta.env.VITE_INTERNET_IDENTITY_CANISTER_ID);
+    return `http://localhost:4943/?canisterId=${canisterId}`;
   }
   return config.INTERNET_IDENTITY_URL;
 };

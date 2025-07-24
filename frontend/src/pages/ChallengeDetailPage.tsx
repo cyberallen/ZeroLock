@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Principal } from '@dfinity/principal';
 import {
   ArrowLeftIcon,
   ClockIcon,
   CurrencyDollarIcon,
   UserGroupIcon,
-  DocumentTextIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  XCircleIcon,
   EyeIcon,
   CodeBracketIcon,
 } from '@heroicons/react/24/outline';
 import { ChallengeDetail, AttackAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+
 import Badge from '@/components/ui/Badge';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatDistanceToNow } from 'date-fns';
@@ -48,6 +47,14 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
     participantCount: 23,
     createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
     expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    contractCode: 'import Principal "mo:base/Principal";\nimport Time "mo:base/Time";\n\nactor DeFiProtocol {\n  // Contract implementation\n}',
+    candidInterface: 'service : {\n  deposit: (nat) -> (bool);\n  withdraw: (nat) -> (bool);\n}',
+    currentBalance: 1000000,
+    initialBalance: 1000000,
+    attackHistory: [],
+    contractLanguage: 'Motoko',
+    creator: Principal.fromText('rdmx6-jaaaa-aaaaa-aaadq-cai'),
+    canisterId: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
     requirements: [
       '发现智能合约中的重大安全漏洞',
       '提供完整的攻击向量和概念验证',
@@ -68,35 +75,50 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
     successfulHacks: 2,
     recentAttempts: [
       {
-        id: 1,
-        hackerPrincipal: 'rdmx6-jaaaa-aaaaa-aaadq-cai',
-        hackerNickname: 'CryptoHacker',
-        submittedAt: Date.now() - 2 * 60 * 60 * 1000,
-        status: 'Under Review',
-        severity: 'High',
-        description: '发现重入攻击漏洞，可能导致资金流失',
-        reward: 0,
-      },
+          id: '1',
+          attacker: 'rdmx6-jaaaa-aaaaa-aaadq-cai',
+          timestamp: Date.now() - 2 * 60 * 60 * 1000,
+          method: 'reentrancy',
+          success: false,
+          gasUsed: 150000,
+          hackerNickname: 'CryptoHacker',
+          submittedAt: Date.now() - 2 * 60 * 60 * 1000,
+          status: 'pending',
+          severity: 'high',
+          challengeTitle: 'DeFi协议安全审计挑战',
+          description: '发现重入攻击漏洞，可能导致资金流失',
+          reward: 0,
+        },
       {
-        id: 2,
-        hackerPrincipal: 'rno2w-sqaaa-aaaaa-aaacq-cai',
-        hackerNickname: 'WhiteHat',
-        submittedAt: Date.now() - 6 * 60 * 60 * 1000,
-        status: 'Approved',
-        severity: 'Medium',
-        description: '整数溢出漏洞',
-        reward: 2000,
-      },
+          id: '2',
+          attacker: 'rno2w-sqaaa-aaaaa-aaacq-cai',
+          timestamp: Date.now() - 6 * 60 * 60 * 1000,
+          method: 'integer_overflow',
+          success: true,
+          gasUsed: 120000,
+          hackerNickname: 'WhiteHat',
+          submittedAt: Date.now() - 6 * 60 * 60 * 1000,
+          status: 'approved',
+          severity: 'medium',
+          challengeTitle: 'DeFi协议安全审计挑战',
+          description: '整数溢出漏洞',
+          reward: 2000,
+        },
       {
-        id: 3,
-        hackerPrincipal: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
-        hackerNickname: 'SecurityExpert',
-        submittedAt: Date.now() - 12 * 60 * 60 * 1000,
-        status: 'Rejected',
-        severity: 'Low',
-        description: '权限检查不足',
-        reward: 0,
-      },
+          id: '3',
+          attacker: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
+          timestamp: Date.now() - 12 * 60 * 60 * 1000,
+          method: 'access_control',
+          success: false,
+          gasUsed: 80000,
+          hackerNickname: 'SecurityExpert',
+          submittedAt: Date.now() - 12 * 60 * 60 * 1000,
+          status: 'rejected',
+          severity: 'low',
+          challengeTitle: 'DeFi协议安全审计挑战',
+          description: '权限检查不足',
+          reward: 0,
+        },
     ],
   };
 
@@ -108,11 +130,9 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
   const handleSubmitAttack = async () => {
     if (!attackCode.trim()) {
       addNotification({
-        id: Date.now().toString(),
         type: 'error',
         title: 'Submission Failed',
         message: 'Please enter attack code',
-        timestamp: Date.now(),
       });
       return;
     }
@@ -123,22 +143,18 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       addNotification({
-        id: Date.now().toString(),
         type: 'success',
         title: 'Submission Successful',
         message: 'Your attack has been submitted and is awaiting review',
-        timestamp: Date.now(),
       });
       
       setAttackCode('');
       setShowSubmissionForm(false);
     } catch (error) {
       addNotification({
-        id: Date.now().toString(),
         type: 'error',
         title: 'Submission Failed',
         message: 'Network error, please try again later',
-        timestamp: Date.now(),
       });
     } finally {
       setIsSubmitting(false);
@@ -156,19 +172,19 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
 
   const getStatusColor = (status: AttackAttempt['status']) => {
     switch (status) {
-      case 'Under Review': return 'warning';
-      case 'Approved': return 'success';
-      case 'Rejected': return 'danger';
+      case 'pending': return 'warning';
+      case 'approved': return 'success';
+      case 'rejected': return 'danger';
       default: return 'default';
     }
   };
 
   const getSeverityColor = (severity: AttackAttempt['severity']) => {
     switch (severity) {
-      case 'Critical': return 'danger';
-      case 'High': return 'danger';
-      case 'Medium': return 'warning';
-      case 'Low': return 'success';
+      case 'critical': return 'danger';
+      case 'high': return 'danger';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
       default: return 'default';
     }
   };
@@ -381,13 +397,13 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
                         </div>
                         <div className="flex space-x-2">
                           <Badge variant={getStatusColor(attempt.status)}>
-                            {attempt.status === 'Under Review' ? 'Under Review' :
-                             attempt.status === 'Approved' ? 'Approved' : 'Rejected'}
+                            {attempt.status === 'pending' ? 'Under Review' :
+                             attempt.status === 'approved' ? 'Approved' : 'Rejected'}
                           </Badge>
                           <Badge variant={getSeverityColor(attempt.severity)}>
-                            {attempt.severity === 'Critical' ? 'Critical' :
-                             attempt.severity === 'High' ? 'High' :
-                             attempt.severity === 'Medium' ? 'Medium' : 'Low'}
+                            {attempt.severity === 'critical' ? 'Critical' :
+                             attempt.severity === 'high' ? 'High' :
+                             attempt.severity === 'medium' ? 'Medium' : 'Low'}
                           </Badge>
                         </div>
                       </div>

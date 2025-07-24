@@ -4,7 +4,7 @@
 use candid::{CandidType, Deserialize, Principal};
 use serde::Serialize;
 use std::collections::HashMap;
-use ic_stable_structures::{Storable, BoundedStorable};
+use ic_stable_structures::Storable;
 use std::borrow::Cow;
 
 // Token types supported by the platform
@@ -259,6 +259,11 @@ pub struct Balance {
 
 // BoundedStorable implementations for stable storage
 impl Storable for Balance {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -268,12 +273,14 @@ impl Storable for Balance {
     }
 }
 
-impl BoundedStorable for Balance {
-    const MAX_SIZE: u32 = 1024; // Reasonable upper bound for Balance
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for Challenge {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 10240,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -283,12 +290,14 @@ impl Storable for Challenge {
     }
 }
 
-impl BoundedStorable for Challenge {
-    const MAX_SIZE: u32 = 10240; // Large enough for challenge data including WASM
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for UserProfile {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -298,12 +307,14 @@ impl Storable for UserProfile {
     }
 }
 
-impl BoundedStorable for UserProfile {
-    const MAX_SIZE: u32 = 1024; // Reasonable upper bound for UserProfile
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for Transaction {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -313,12 +324,14 @@ impl Storable for Transaction {
     }
 }
 
-impl BoundedStorable for Transaction {
-    const MAX_SIZE: u32 = 1024; // Reasonable upper bound for Transaction
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for AttackAttempt {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 2048,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -328,12 +341,14 @@ impl Storable for AttackAttempt {
     }
 }
 
-impl BoundedStorable for AttackAttempt {
-    const MAX_SIZE: u32 = 2048; // Larger for potential proof data
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for Evaluation {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 2048,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -343,10 +358,7 @@ impl Storable for Evaluation {
     }
 }
 
-impl BoundedStorable for Evaluation {
-    const MAX_SIZE: u32 = 2048; // Larger for reasoning text
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 
 
@@ -359,6 +371,11 @@ impl BoundedStorable for Evaluation {
 pub struct StorableString(pub String);
 
 impl Storable for StorableString {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Borrowed(self.0.as_bytes())
     }
@@ -368,16 +385,18 @@ impl Storable for StorableString {
     }
 }
 
-impl BoundedStorable for StorableString {
-    const MAX_SIZE: u32 = 1024; // Reasonable upper bound for strings
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Vec<u64> wrapper for stable storage
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct StorableVecU64(pub Vec<u64>);
 
 impl Storable for StorableVecU64 {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 8192,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         let mut bytes = Vec::new();
         for &item in &self.0 {
@@ -394,10 +413,7 @@ impl Storable for StorableVecU64 {
     }
 }
 
-impl BoundedStorable for StorableVecU64 {
-    const MAX_SIZE: u32 = 8192; // Reasonable upper bound for Vec<u64>
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
@@ -223,26 +223,8 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/challenge/:id" element={<ChallengeDetailPage />} />
-            <Route 
-              path="/hacker-dashboard" 
-              element={
-                isAuthenticated && userType === 'hacker' ? (
-                  <HackerDashboard />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/company-dashboard" 
-              element={
-                isAuthenticated && userType === 'company' ? (
-                  <CompanyDashboard />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              } 
-            />
+            <Route path="/hacker-dashboard" element={<HackerDashboard />} />
+            <Route path="/company-dashboard" element={<CompanyDashboard />} />
             {/* Redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

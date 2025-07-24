@@ -5,7 +5,7 @@ use crate::types::*;
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable};
 use serde::Serialize;
 use std::cell::RefCell;
 
@@ -92,6 +92,11 @@ impl From<StorablePrincipal> for Principal {
 }
 
 impl Storable for StorablePrincipal {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 29,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
         std::borrow::Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -101,10 +106,7 @@ impl Storable for StorablePrincipal {
     }
 }
 
-impl BoundedStorable for StorablePrincipal {
-    const MAX_SIZE: u32 = 29;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Global state - Vault uses MemoryId 10-19
 thread_local! {
@@ -740,6 +742,11 @@ fn is_authorized_canister(canister: &Principal) -> bool {
 use std::borrow::Cow;
 
 impl Storable for LockInfo {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -749,14 +756,16 @@ impl Storable for LockInfo {
     }
 }
 
-impl BoundedStorable for LockInfo {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 
 
 impl Storable for LockStatus {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 256,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -766,14 +775,16 @@ impl Storable for LockStatus {
     }
 }
 
-impl BoundedStorable for LockStatus {
-    const MAX_SIZE: u32 = 256;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 
 
 impl Storable for VaultStats {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 512,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -783,14 +794,16 @@ impl Storable for VaultStats {
     }
 }
 
-impl BoundedStorable for VaultStats {
-    const MAX_SIZE: u32 = 512;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 
 
 impl Storable for UnlockReason {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -798,9 +811,4 @@ impl Storable for UnlockReason {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         candid::decode_one(&bytes).unwrap()
     }
-}
-
-impl BoundedStorable for UnlockReason {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import {
   PlusIcon,
   ChartBarIcon,
@@ -7,13 +7,14 @@ import {
   CurrencyDollarIcon,
   UserGroupIcon,
   CheckCircleIcon,
-  XCircleIcon,
+
   EyeIcon,
   PencilIcon,
   TrashIcon,
   ExclamationTriangleIcon,
   BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
+import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { CompanyProfile, Challenge, AttackAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -27,7 +28,7 @@ interface CompanyDashboardProps {}
 
 const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'challenges' | 'submissions' | 'profile'>('overview');
-  const [showCreateChallenge, setShowCreateChallenge] = useState(false);
+
   const { companyProfile, setCompanyProfile, challenges, setChallenges } = useAppStore();
 
   // 模拟公司档案数据
@@ -39,21 +40,23 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
     website: 'https://defi-labs.com',
     industry: 'DeFi',
     foundedYear: 2020,
-    teamSize: '50-100',
+    teamSize: 75,
     location: 'Singapore',
     totalBountyPaid: 150000,
+    totalChallenges: 15,
     activeChallenges: 3,
     completedChallenges: 12,
+    successfulHacks: 8,
+    averageTimeToHack: 5.2,
     averageResolutionTime: 7, // 天
     reputation: 4.8,
     joinedAt: Date.now() - 2 * 365 * 24 * 60 * 60 * 1000, // 2年前
-    lastActiveAt: Date.now() - 1 * 60 * 60 * 1000, // 1小时前
     socialLinks: {
       twitter: 'https://twitter.com/defilabs',
-      github: 'https://github.com/defi-labs',
       linkedin: 'https://linkedin.com/company/defi-labs',
+      website: 'https://defi-labs.com',
     },
-    verificationStatus: 'Verified' as const,
+    verificationStatus: 'verified' as const,
     securityScore: 95,
   };
 
@@ -106,44 +109,50 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
   // 模拟提交记录
   const mockSubmissions: AttackAttempt[] = [
     {
-      id: 1,
-      challengeId: 1,
+      id: '1',
+      attacker: 'CryptoHacker',
+      timestamp: Date.now() - 2 * 60 * 60 * 1000,
+      method: 'reentrancy',
+      success: false,
+      gasUsed: 50000,
       challengeTitle: 'DeFi Protocol Security Audit Challenge',
-      hackerPrincipal: 'rdmx6-jaaaa-aaaaa-aaadq-cai',
       hackerNickname: 'CryptoHacker',
       submittedAt: Date.now() - 2 * 60 * 60 * 1000,
-      status: 'Under Review' as const,
-      severity: 'High' as const,
+      status: 'pending',
+      severity: 'high',
       description: 'Discovered reentrancy attack vulnerability that could lead to fund loss',
-      code: 'contract Attack { ... }',
       reward: 0,
       feedback: '',
     },
     {
-      id: 2,
-      challengeId: 1,
+      id: '2',
+      attacker: 'WhiteHat',
+      timestamp: Date.now() - 6 * 60 * 60 * 1000,
+      method: 'overflow',
+      success: true,
+      gasUsed: 30000,
       challengeTitle: 'DeFi Protocol Security Audit Challenge',
-      hackerPrincipal: 'rno2w-sqaaa-aaaaa-aaacq-cai',
       hackerNickname: 'WhiteHat',
       submittedAt: Date.now() - 6 * 60 * 60 * 1000,
-      status: 'Approved' as const,
-      severity: 'Medium' as const,
+      status: 'approved',
+      severity: 'medium',
       description: 'Integer overflow vulnerability',
-      code: 'function exploit() { ... }',
       reward: 2000,
       feedback: 'Excellent discovery! Accurate vulnerability analysis and practical fix suggestions.',
     },
     {
-      id: 3,
-      challengeId: 6,
+      id: '3',
+      attacker: 'SecurityExpert',
+      timestamp: Date.now() - 12 * 60 * 60 * 1000,
+      method: 'permission',
+      success: false,
+      gasUsed: 20000,
       challengeTitle: 'Liquidity Mining Contract Audit',
-      hackerPrincipal: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
       hackerNickname: 'SecurityExpert',
       submittedAt: Date.now() - 12 * 60 * 60 * 1000,
-      status: 'Rejected' as const,
-      severity: 'Low' as const,
+      status: 'rejected',
+      severity: 'low',
       description: 'Insufficient permission checks',
-      code: 'if (msg.sender == owner) { ... }',
       reward: 0,
       feedback: 'This vulnerability has minimal impact and does not meet reward criteria.',
     },
@@ -163,21 +172,14 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
     }
   };
 
-  const getSubmissionStatusColor = (status: AttackAttempt['status']) => {
-    switch (status) {
-      case 'Under Review': return 'warning' as const;
-      case 'Approved': return 'success' as const;
-      case 'Rejected': return 'danger' as const;
-      default: return 'default' as const;
-    }
-  };
+
 
   const getSeverityColor = (severity: AttackAttempt['severity']) => {
     switch (severity) {
-      case 'Critical': return 'danger' as const;
-      case 'High': return 'danger' as const;
-      case 'Medium': return 'warning' as const;
-      case 'Low': return 'success' as const;
+      case 'critical': return 'danger' as const;
+      case 'high': return 'danger' as const;
+      case 'medium': return 'warning' as const;
+      case 'low': return 'success' as const;
       default: return 'default' as const;
     }
   };
@@ -203,7 +205,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
   };
 
   const activeChallenges = challenges.filter(c => c.status === 'Active');
-  const pendingSubmissions = mockSubmissions.filter(s => s.status === 'Under Review');
+  const pendingSubmissions = mockSubmissions.filter(s => s.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -341,9 +343,9 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
                             </p>
                             <div className="flex items-center space-x-2 mt-2">
                               <Badge variant={getSeverityColor(submission.severity)} size="sm">
-                                {submission.severity === 'Critical' ? 'Critical' :
-                                 submission.severity === 'High' ? 'High' :
-                                 submission.severity === 'Medium' ? 'Medium' : 'Low'}
+                                {submission.severity === 'critical' ? 'Critical' :
+                                 submission.severity === 'high' ? 'High' :
+                                 submission.severity === 'medium' ? 'Medium' : 'Low'}
                               </Badge>
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 {formatDistanceToNow(submission.submittedAt, { addSuffix: true })}
@@ -415,10 +417,20 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <Button size="sm" variant="outline" leftIcon={<EyeIcon className="h-4 w-4" />}>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              leftIcon={<EyeIcon className="h-4 w-4" />}
+                              onClick={() => alert('View challenge details feature coming soon!')}
+                            >
                               View
                             </Button>
-                            <Button size="sm" variant="outline" leftIcon={<PencilIcon className="h-4 w-4" />}>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              leftIcon={<PencilIcon className="h-4 w-4" />}
+                              onClick={() => alert('Edit challenge feature coming soon!')}
+                            >
                               Edit
                             </Button>
                           </div>
@@ -459,239 +471,280 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
                         {companyProfile?.reputation}
                       </span>
                     </div>
-                    <Badge variant={companyProfile?.verificationStatus === 'Verified' ? 'success' : 'warning'}>
-                      {companyProfile?.verificationStatus === 'Verified' ? 'Verified' : 'Pending'}
-                    </Badge>
+                    <div className="flex items-center justify-center space-x-2">
+                      {companyProfile?.verificationStatus === 'verified' && (
+                        <CheckBadgeIcon className={`h-5 w-5 ${
+                          companyProfile.verificationStatus === 'verified' ? 'text-blue-500' : 'text-gray-400'
+                        }`} />
+                      )}
+                      <span className={`text-sm ${
+                        companyProfile?.verificationStatus === 'verified' ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
+                        {companyProfile?.verificationStatus === 'verified' ? 'Verified' : 'Unverified'}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Quick statistics */}
+              {/* Quick Statistics */}
               <Card>
                 <CardHeader>
                   <CardTitle>Quick Statistics</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Avg Resolution Time</span>
-                      <span className="font-semibold">{companyProfile?.averageResolutionTime} days</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Team Size</span>
-                      <span className="font-semibold">{companyProfile?.teamSize}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Founded Year</span>
-                      <span className="font-semibold">{companyProfile?.foundedYear}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Location</span>
-                      <span className="font-semibold">{companyProfile?.location}</span>
-                    </div>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Avg Resolution Time</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">7 days</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Team Size</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">50-100</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Founded Year</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">2020</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Location</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Singapore</span>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Quick actions */}
+              {/* Quick Actions */}
               <Card>
                 <CardHeader>
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <Button className="w-full" leftIcon={<PlusIcon className="h-4 w-4" />}>
-                      Create New Challenge
-                    </Button>
-                    <Button variant="outline" className="w-full" leftIcon={<ChartBarIcon className="h-4 w-4" />}>
-                      View Analytics
-                    </Button>
-                    <Button variant="outline" className="w-full" leftIcon={<UserGroupIcon className="h-4 w-4" />}>
-                      Invite Hackers
-                    </Button>
-                  </div>
+                <CardContent className="space-y-3">
+                  <Button 
+                    className="w-full" 
+                    leftIcon={<PlusIcon className="h-4 w-4" />}
+                    onClick={() => setActiveTab('challenges')}
+                  >
+                    Create New Challenge
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    leftIcon={<ChartBarIcon className="h-4 w-4" />}
+                    onClick={() => alert('View analytics feature coming soon!')}
+                  >
+                    View Analytics
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    leftIcon={<UserGroupIcon className="h-4 w-4" />}
+                    onClick={() => alert('Invite hackers feature coming soon!')}
+                  >
+                    Invite Hackers
+                  </Button>
                 </CardContent>
               </Card>
             </div>
           </div>
         )}
 
-        {/* Challenge management tab */}
+        {/* Challenge Management tab */}
         {activeTab === 'challenges' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Challenge Management</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Challenge Management</h2>
               <Button leftIcon={<PlusIcon className="h-4 w-4" />}>
                 Create New Challenge
               </Button>
             </div>
-            
-            <Card>
-              <CardContent>
-                <div className="space-y-6">
-                  {challenges.map((challenge) => (
-                    <div key={challenge.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                            {challenge.title}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-400 mb-2">
-                            {challenge.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                            <span>
-                              Created: {formatDistanceToNow(challenge.createdAt, { addSuffix: true })}
-                          </span>
-                          <span>
-                            Expires: {formatDistanceToNow(challenge.expiresAt, { addSuffix: true })}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end space-y-2">
-                          <Badge variant={getStatusColor(challenge.status)}>
-                            {challenge.status === 'Active' ? 'Active' :
-                             challenge.status === 'Completed' ? 'Completed' : 'Expired'}
-                          </Badge>
-                          <Badge variant={getDifficultyColor(challenge.difficulty)}>
-                            {challenge.difficulty === 'Easy' ? 'Easy' :
-                             challenge.difficulty === 'Medium' ? 'Medium' : 'Hard'}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center space-x-1 text-success-600 mb-1">
+
+            <div className="grid gap-6">
+              {challenges.map((challenge) => (
+                <Card key={challenge.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                          {challenge.title}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          {challenge.description}
+                        </p>
+                        
+                        <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-1">
                             <CurrencyDollarIcon className="h-4 w-4" />
-                            <span className="font-bold">{challenge.bounty.toLocaleString()}</span>
+                            <span>{challenge.bounty.toLocaleString()} {challenge.tokenType}</span>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Bounty ({challenge.tokenType})</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center space-x-1 text-primary-600 mb-1">
+                          <div className="flex items-center space-x-1">
                             <UserGroupIcon className="h-4 w-4" />
-                            <span className="font-bold">{challenge.participantCount}</span>
+                            <span>{challenge.participantCount} participants</span>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Participants</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center space-x-1 text-purple-600 mb-1">
+                          <div className="flex items-center space-x-1">
                             <ClockIcon className="h-4 w-4" />
-                            <span className="font-bold">{formatTimeRemaining(challenge.timeRemaining)}</span>
+                            <span>{formatTimeRemaining(challenge.timeRemaining)}</span>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Time Remaining</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center space-x-1 text-orange-600 mb-1">
-                            <CheckCircleIcon className="h-4 w-4" />
-                            <span className="font-bold">0</span>
-                          </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Successful Attacks</p>
                         </div>
                       </div>
                       
-                      <div className="flex space-x-4">
-                        <Button size="sm" variant="outline" leftIcon={<EyeIcon className="h-4 w-4" />}>
-                          View Details
-                        </Button>
-                        <Button size="sm" variant="outline" leftIcon={<PencilIcon className="h-4 w-4" />}>
-                          Edit
-                        </Button>
-                        {challenge.status === 'Active' && (
-                          <Button size="sm" variant="outline">
-                            Pause
-                          </Button>
-                        )}
-                        <Button size="sm" variant="danger" leftIcon={<TrashIcon className="h-4 w-4" />}>
-                          Delete
-                        </Button>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Badge variant={getStatusColor(challenge.status)}>
+                          {challenge.status}
+                        </Badge>
+                        <Badge variant={getDifficultyColor(challenge.difficulty)}>
+                          {challenge.difficulty}
+                        </Badge>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    
+                    <div className="flex space-x-4">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        leftIcon={<EyeIcon className="h-4 w-4" />}
+                        onClick={() => alert(`Viewing details for ${challenge.title}`)}
+                      >
+                        View Details
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        leftIcon={<PencilIcon className="h-4 w-4" />}
+                        onClick={() => alert(`Editing ${challenge.title}`)}
+                      >
+                        Edit
+                      </Button>
+                      {challenge.status === 'Active' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => alert(`Pausing ${challenge.title}`)}
+                        >
+                          Pause
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="danger" 
+                        leftIcon={<TrashIcon className="h-4 w-4" />}
+                        onClick={() => alert(`Deleting ${challenge.title}`)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Submission review tab */}
+        {/* Submission Review tab */}
         {activeTab === 'submissions' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Submission Review</h2>
-            
-            <Card>
-              <CardContent>
-                <div className="space-y-6">
-                  {mockSubmissions.map((submission) => (
-                    <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                            {submission.challengeTitle}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-400 mb-2">
-                            Submitted by: {submission.hackerNickname}
-                          </p>
-                          <p className="text-gray-600 dark:text-gray-400 mb-2">
-                            {submission.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                            <span>
-                              Submitted: {formatDistanceToNow(submission.submittedAt, { addSuffix: true })}
-                            </span>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Submission Review</h2>
+              <div className="flex space-x-2">
+                <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                  <option>All Submissions</option>
+                  <option>Pending Review</option>
+                  <option>Approved</option>
+                  <option>Rejected</option>
+                </select>
+                <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                  <option>All Severities</option>
+                  <option>Critical</option>
+                  <option>High</option>
+                  <option>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-6">
+              {mockSubmissions.map((submission) => (
+                <Card key={submission.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                          {submission.challengeTitle}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          Submitted by: <span className="font-medium">{submission.hackerNickname}</span>
+                        </p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          {submission.description}
+                        </p>
+                        
+                        <div className="flex items-center space-x-2 mb-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            submission.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            submission.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {submission.status === 'pending' ? 'Under Review' :
+                             submission.status === 'approved' ? 'Approved' : 'Rejected'}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            submission.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                            submission.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                            submission.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {submission.severity === 'critical' ? 'Critical' :
+                             submission.severity === 'high' ? 'High' :
+                             submission.severity === 'medium' ? 'Medium' : 'Low'}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatDistanceToNow(submission.submittedAt, { addSuffix: true })}
+                          </span>
+                        </div>
+                        
+                        {submission.reward > 0 && (
+                          <div className="flex items-center space-x-1 text-sm text-success-600 dark:text-success-400">
+                            <CurrencyDollarIcon className="h-4 w-4" />
+                            <span>Reward: {submission.reward.toLocaleString()} ICP</span>
                           </div>
-                        </div>
-                        <div className="flex flex-col items-end space-y-2">
-                          <Badge variant={getSubmissionStatusColor(submission.status)}>
-                            {submission.status === 'Under Review' ? 'Under Review' :
-                             submission.status === 'Approved' ? 'Approved' : 'Rejected'}
-                          </Badge>
-                          <Badge variant={getSeverityColor(submission.severity)}>
-                            {submission.severity === 'Critical' ? 'Critical' :
-                             submission.severity === 'High' ? 'High' :
-                             submission.severity === 'Medium' ? 'Medium' : 'Low'}
-                          </Badge>
-                          {submission.reward > 0 && (
-                            <div className="flex items-center space-x-1 text-success-600">
-                              <CurrencyDollarIcon className="h-4 w-4" />
-                              <span className="font-medium">{submission.reward.toLocaleString()}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {submission.feedback && (
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Feedback</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{submission.feedback}</p>
-                        </div>
-                      )}
-                      
-                      <div className="flex space-x-4">
-                        <Button size="sm" variant="outline" leftIcon={<EyeIcon className="h-4 w-4" />}>
-                          View Code
-                        </Button>
-                        {submission.status === 'Under Review' && (
-                          <>
-                            <Button size="sm" variant="success">
-                              Approve
-                            </Button>
-                            <Button size="sm" variant="danger">
-                              Reject
-                            </Button>
-                          </>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    
+                    <div className="flex space-x-4">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        leftIcon={<EyeIcon className="h-4 w-4" />}
+                        onClick={() => alert(`Viewing code for ${submission.challengeTitle}`)}
+                      >
+                        View Code
+                      </Button>
+                      {submission.status === 'pending' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="success"
+                            onClick={() => alert(`Approving submission for ${submission.challengeTitle}`)}
+                          >
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="danger"
+                            onClick={() => alert(`Rejecting submission for ${submission.challengeTitle}`)}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Company profile tab */}
+        {/* Company Profile tab */}
         {activeTab === 'profile' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card>
@@ -706,7 +759,11 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
                         {companyProfile?.name.charAt(0)}
                       </span>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => alert('Change logo feature coming soon!')}
+                    >
                       Change Logo
                     </Button>
                   </div>
@@ -771,11 +828,6 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
                   <div>
                     <label className="label">Twitter</label>
                     <Input value={companyProfile?.socialLinks?.twitter} placeholder="https://twitter.com/company" />
-                  </div>
-                  
-                  <div>
-                    <label className="label">GitHub</label>
-                    <Input value={companyProfile?.socialLinks?.github} placeholder="https://github.com/company" />
                   </div>
                   
                   <div>

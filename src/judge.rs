@@ -5,7 +5,7 @@ use crate::types::*;
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable};
 use serde::Serialize;
 use std::cell::RefCell;
 
@@ -734,6 +734,11 @@ pub async fn judge_heartbeat() {
 // Storable implementations for stable storage
 
 impl Storable for MonitoringState {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 1024,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -743,12 +748,14 @@ impl Storable for MonitoringState {
     }
 }
 
-impl BoundedStorable for MonitoringState {
-    const MAX_SIZE: u32 = 1024;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for BalanceSnapshot {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 512,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -758,12 +765,14 @@ impl Storable for BalanceSnapshot {
     }
 }
 
-impl BoundedStorable for BalanceSnapshot {
-    const MAX_SIZE: u32 = 512;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for AutomatedRule {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 2048,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -773,12 +782,14 @@ impl Storable for AutomatedRule {
     }
 }
 
-impl BoundedStorable for AutomatedRule {
-    const MAX_SIZE: u32 = 2048;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 impl Storable for DisputeCase {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 4096,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -788,16 +799,18 @@ impl Storable for DisputeCase {
     }
 }
 
-impl BoundedStorable for DisputeCase {
-    const MAX_SIZE: u32 = 4096;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Vec<BalanceSnapshot> wrapper for stable storage
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct StorableVecBalanceSnapshot(pub Vec<BalanceSnapshot>);
 
 impl Storable for StorableVecBalanceSnapshot {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 16384,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -807,10 +820,7 @@ impl Storable for StorableVecBalanceSnapshot {
     }
 }
 
-impl BoundedStorable for StorableVecBalanceSnapshot {
-    const MAX_SIZE: u32 = 16384;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Public functions for unified canister setup
 

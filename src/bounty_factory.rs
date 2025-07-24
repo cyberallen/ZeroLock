@@ -9,7 +9,7 @@ use ic_cdk::api::management_canister::main::{
 };
 use ic_cdk_macros::*;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable, BoundedStorable};
+use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, Storable};
 use serde::Serialize;
 use std::cell::RefCell;
 
@@ -32,6 +32,11 @@ impl From<StorablePrincipal> for Principal {
 }
 
 impl Storable for StorablePrincipal {
+    const BOUND: ic_stable_structures::storable::Bound = ic_stable_structures::storable::Bound::Bounded {
+        max_size: 29,
+        is_fixed_size: false,
+    };
+
     fn to_bytes(&self) -> Cow<[u8]> {
         Cow::Owned(candid::encode_one(self).unwrap())
     }
@@ -41,10 +46,7 @@ impl Storable for StorablePrincipal {
     }
 }
 
-impl BoundedStorable for StorablePrincipal {
-    const MAX_SIZE: u32 = 29;
-    const IS_FIXED_SIZE: bool = false;
-}
+
 
 // Memory management
 type Memory = VirtualMemory<DefaultMemoryImpl>;
