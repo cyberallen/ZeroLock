@@ -1,6 +1,6 @@
 # ZeroLock - Decentralized Bug Bounty Platform
 
-ZeroLock is a decentralized bug bounty platform built on the Internet Computer Protocol (ICP). This project includes a Rust backend implementation (migrated from the original Motoko codebase) and a modern React frontend application.
+ZeroLock is a decentralized bug bounty platform built on the Internet Computer Protocol (ICP). This project includes a Rust backend implementation and a modern React frontend application.
 
 ## 🏗️ System Architecture
 
@@ -142,7 +142,7 @@ src/
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/cyberallen/ZeroLock.git
 cd zerolock
 ```
 
