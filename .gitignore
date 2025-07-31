@@ -42,3 +42,4 @@ yarn-error.log*
 # .dfx temp file
 .dfx/
 .vercel/
+.baks/
