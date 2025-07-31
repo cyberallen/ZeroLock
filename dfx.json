@@ -12,12 +12,12 @@
         }
       }
     },
-    "zerolock_backend": {
+    "backend": {
       "type": "rust",
       "package": "zerolock",
       "candid": "src/zerolock_backend.did"
     },
-    "zerolock_frontend": {
+    "frontend": {
       "type": "assets",
       "source": ["frontend/dist"]
     }

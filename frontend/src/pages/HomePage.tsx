@@ -8,10 +8,6 @@ import {
   CurrencyDollarIcon,
   UserGroupIcon,
   TrophyIcon,
-  ShieldCheckIcon,
-  ChartBarIcon,
-  DevicePhoneMobileIcon,
-  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import { Challenge, HackerRank, ChallengeFilters } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
