@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo " ZeroLock 项目调试工具"
+echo " ZeroLock Project Debug Tool"
 
-# 颜色定义
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -11,99 +11,99 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# 显示帮助信息
+# Show help information
 show_help() {
-    echo -e "${BLUE} ZeroLock 调试工具使用说明${NC}"
+    echo -e "${BLUE} ZeroLock Debug Tool Usage${NC}"
     echo -e "${BLUE}===========================================${NC}"
-    echo -e "用法: ./debug.sh [选项]"
+    echo -e "Usage: ./debug.sh [options]"
     echo -e ""
-    echo -e "选项:"
-    echo -e "  --env, -e        检查环境配置"
-    echo -e "  --canisters, -c  检查 Canister 状态"
-    echo -e "  --network, -n    检查网络连接"
-    echo -e "  --frontend, -f   检查前端状态"
-    echo -e "  --logs, -l       查看日志"
-    echo -e "  --ports, -p      检查端口占用"
-    echo -e "  --all, -a        执行所有检查"
-    echo -e "  --fix            尝试自动修复常见问题"
-    echo -e "  --reset          重置项目到初始状态"
-    echo -e "  --help, -h       显示此帮助信息"
+    echo -e "Options:"
+    echo -e "  --env, -e        Check environment configuration"
+    echo -e "  --canisters, -c  Check Canister status"
+    echo -e "  --network, -n    Check network connectivity"
+    echo -e "  --frontend, -f   Check frontend status"
+    echo -e "  --logs, -l       View logs"
+    echo -e "  --ports, -p      Check port usage"
+    echo -e "  --all, -a        Run all checks"
+    echo -e "  --fix            Try to auto-fix common issues"
+    echo -e "  --reset          Reset project to initial state"
+    echo -e "  --help, -h       Show this help information"
     echo -e ""
-    echo -e "示例:"
-    echo -e "  ./debug.sh --all          # 执行所有检查"
-    echo -e "  ./debug.sh --canisters    # 只检查 Canister 状态"
-    echo -e "  ./debug.sh --fix          # 尝试自动修复问题"
+    echo -e "Examples:"
+    echo -e "  ./debug.sh --all          # Run all checks"
+    echo -e "  ./debug.sh --canisters    # Only check Canister status"
+    echo -e "  ./debug.sh --fix          # Try to auto-fix issues"
 }
 
-# 检查环境配置
+# Check environment configuration
 check_environment() {
-    echo -e "${BLUE} 检查环境配置...${NC}"
+    echo -e "${BLUE} Checking environment configuration...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
-    # 检查必需工具
-    echo -e "${PURPLE} 必需工具检查:${NC}"
+    # Check required tools
+    echo -e "${PURPLE} Required tools check:${NC}"
     
     tools=("dfx" "cargo" "rustc" "node" "npm")
     for tool in "${tools[@]}"; do
         if command -v $tool &> /dev/null; then
-            version=$($tool --version 2>/dev/null | head -n1 || echo "未知版本")
+            version=$($tool --version 2>/dev/null | head -n1 || echo "Unknown version")
             echo -e "   $tool: ${GREEN}$version${NC}"
         else
-            echo -e "   $tool: ${RED}未安装${NC}"
+            echo -e "   $tool: ${RED}Not installed${NC}"
         fi
     done
     
     echo -e ""
     
-    # 检查环境变量
-    echo -e "${PURPLE} 环境变量检查:${NC}"
+    # Check environment variables
+    echo -e "${PURPLE} Environment variables check:${NC}"
     
     if [ -f "frontend/.env" ]; then
-        echo -e "   环境文件: ${GREEN}存在${NC}"
-        echo -e "${YELLOW}   环境变量内容:${NC}"
+        echo -e "   Environment file: ${GREEN}Exists${NC}"
+        echo -e "${YELLOW}   Environment variables content:${NC}"
         while IFS= read -r line; do
             if [[ $line =~ ^[A-Z] ]]; then
                 echo -e "    $line"
             fi
         done < frontend/.env
     else
-        echo -e "   环境文件: ${RED}不存在${NC}"
+        echo -e "   Environment file: ${RED}Does not exist${NC}"
     fi
     
     echo -e ""
     
-    # 检查项目文件
-    echo -e "${PURPLE} 项目文件检查:${NC}"
+    # Check project files
+    echo -e "${PURPLE} Project files check:${NC}"
     
     files=("dfx.json" "Cargo.toml" "frontend/package.json" "src/lib.rs")
     for file in "${files[@]}"; do
         if [ -f "$file" ]; then
-            echo -e "   $file: ${GREEN}存在${NC}"
+            echo -e "   $file: ${GREEN}Exists${NC}"
         else
-            echo -e "   $file: ${RED}缺失${NC}"
+            echo -e "   $file: ${RED}Missing${NC}"
         fi
     done
     
     echo -e ""
 }
 
-# 检查 Canister 状态
+# Check Canister status
 check_canisters() {
-    echo -e "${BLUE} 检查 Canister 状态...${NC}"
+    echo -e "${BLUE} Checking Canister status...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
-    # 检查 DFX 网络
+    # Check DFX network
     if ! dfx ping > /dev/null 2>&1; then
-        echo -e "   DFX 网络: ${RED}未运行${NC}"
-        echo -e "   提示: 运行 'dfx start --background' 启动网络"
+        echo -e "   DFX network: ${RED}Not running${NC}"
+        echo -e "   Tip: Run 'dfx start --background' to start the network"
         return 1
     else
-        echo -e "   DFX 网络: ${GREEN}运行中${NC}"
+        echo -e "   DFX network: ${GREEN}Running${NC}"
     fi
     
     echo -e ""
     
-    # 检查各个 Canister
+    # Check each Canister
     canisters=("zerolock_backend" "zerolock_frontend" "internet_identity")
     
     for canister in "${canisters[@]}"; do
@@ -113,139 +113,139 @@ check_canisters() {
             canister_id=$(dfx canister id $canister)
             echo -e "   ID: ${GREEN}$canister_id${NC}"
             
-            # 获取状态
+            # Get status
             if status_output=$(dfx canister status $canister 2>/dev/null); then
                 status=$(echo "$status_output" | grep "Status:" | awk '{print $3}')
                 memory=$(echo "$status_output" | grep "Memory Size:" | awk '{print $3, $4}')
                 cycles=$(echo "$status_output" | grep "Balance:" | awk '{print $2, $3}')
                 
                 if [ "$status" = "Running" ]; then
-                    echo -e "  状态: ${GREEN}$status${NC}"
+                    echo -e "   Status: ${GREEN}$status${NC}"
                 else
-                    echo -e "   状态: ${YELLOW}$status${NC}"
+                    echo -e "   Status: ${YELLOW}$status${NC}"
                 fi
                 
-                echo -e "   内存: $memory"
+                echo -e "   Memory: $memory"
                 echo -e "   Cycles: $cycles"
             else
-                echo -e "   状态: ${RED}无法获取${NC}"
+                echo -e "   Status: ${RED}Unable to retrieve${NC}"
             fi
         else
-            echo -e "   ID: ${RED}未找到${NC}"
+            echo -e "   ID: ${RED}Not found${NC}"
         fi
         
         echo -e ""
     done
 }
 
-# 检查网络连接
+# Check network connectivity
 check_network() {
-    echo -e "${BLUE} 检查网络连接...${NC}"
+    echo -e "${BLUE} Checking network connectivity...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
-    # 检查本地连接
-    echo -e "${PURPLE} 本地连接检查:${NC}"
+    # Check local connectivity
+    echo -e "${PURPLE} Local connectivity check:${NC}"
     
     if ping -c 1 localhost > /dev/null 2>&1; then
-        echo -e "   localhost: ${GREEN}可达${NC}"
+        echo -e "   localhost: ${GREEN}Reachable${NC}"
     else
-        echo -e "   localhost: ${RED}不可达${NC}"
+        echo -e "   localhost: ${RED}Unreachable${NC}"
     fi
     
-    # 检查 DFX 端点
+    # Check DFX endpoint
     if curl -s http://localhost:4943/api/v2/status > /dev/null 2>&1; then
-        echo -e "   DFX 端点: ${GREEN}可达${NC}"
+        echo -e "   DFX endpoint: ${GREEN}Reachable${NC}"
     else
-        echo -e "   DFX 端点: ${RED}不可达${NC}"
+        echo -e "   DFX endpoint: ${RED}Unreachable${NC}"
     fi
     
     echo -e ""
     
-    # 检查 Internet Computer 连接
-    echo -e "${PURPLE}🌍 Internet Computer 连接:${NC}"
+    # Check Internet Computer connectivity
+    echo -e "${PURPLE}🌍 Internet Computer connectivity:${NC}"
     
     if curl -s --max-time 5 https://ic0.app > /dev/null 2>&1; then
-        echo -e "   IC 主网: ${GREEN}可达${NC}"
+        echo -e "   IC mainnet: ${GREEN}Reachable${NC}"
     else
-        echo -e "   IC 主网: ${YELLOW}不可达或超时${NC}"
+        echo -e "   IC mainnet: ${YELLOW}Unreachable or timeout${NC}"
     fi
     
     echo -e ""
 }
 
-# 检查前端状态
+# Check frontend status
 check_frontend() {
-    echo -e "${BLUE} 检查前端状态...${NC}"
+    echo -e "${BLUE} Checking frontend status...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
-    # 检查前端依赖
-    echo -e "${PURPLE} 前端依赖:${NC}"
+    # Check frontend dependencies
+    echo -e "${PURPLE} Frontend dependencies:${NC}"
     
     if [ -d "frontend/node_modules" ]; then
-        echo -e "   node_modules: ${GREEN}存在${NC}"
+        echo -e "   node_modules: ${GREEN}Exists${NC}"
         
-        # 检查关键依赖
+        # Check key dependencies
         key_deps=("react" "@dfinity/agent" "vite")
         for dep in "${key_deps[@]}"; do
             if [ -d "frontend/node_modules/$dep" ]; then
-                echo -e "   $dep: ${GREEN}已安装${NC}"
+                echo -e "   $dep: ${GREEN}Installed${NC}"
             else
-                echo -e "   $dep: ${RED}未安装${NC}"
+                echo -e "   $dep: ${RED}Not installed${NC}"
             fi
         done
     else
-        echo -e "   node_modules: ${RED}不存在${NC}"
-        echo -e "   提示: 运行 'cd frontend && npm install'"
+        echo -e "   node_modules: ${RED}Does not exist${NC}"
+        echo -e "   Tip: Run 'cd frontend && npm install'"
     fi
     
     echo -e ""
     
-    # 检查前端服务器
-    echo -e "${PURPLE} 开发服务器:${NC}"
+    # Check frontend server
+    echo -e "${PURPLE} Development server:${NC}"
     
     if pgrep -f "vite" > /dev/null 2>&1; then
-        echo -e "   Vite 服务器: ${GREEN}运行中${NC}"
+        echo -e "   Vite server: ${GREEN}Running${NC}"
         
-        # 检查端口
+        # Check ports
         for port in 3000 3001; do
             if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-                echo -e "   端口 $port: ${GREEN}监听中${NC}"
+                echo -e "   Port $port: ${GREEN}Listening${NC}"
                 
-                # 测试连接
+                # Test connection
                 if curl -s http://localhost:$port > /dev/null 2>&1; then
-                    echo -e "   HTTP 响应: ${GREEN}正常${NC}"
+                    echo -e "   HTTP response: ${GREEN}Normal${NC}"
                 else
-                    echo -e "   HTTP 响应: ${YELLOW}异常${NC}"
+                    echo -e "   HTTP response: ${YELLOW}Abnormal${NC}"
                 fi
                 break
             fi
         done
     else
-        echo -e "   Vite 服务器: ${RED}未运行${NC}"
+        echo -e "   Vite server: ${RED}Not running${NC}"
     fi
     
     echo -e ""
 }
 
-# 查看日志
+# View logs
 check_logs() {
-    echo -e "${BLUE} 查看系统日志...${NC}"
+    echo -e "${BLUE} Viewing system logs...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
-    # DFX 日志
-    echo -e "${PURPLE} DFX 日志 (最近 20 行):${NC}"
+    # DFX logs
+    echo -e "${PURPLE} DFX logs (last 20 lines):${NC}"
     if [ -f ".dfx/local/replica.log" ]; then
         tail -n 20 .dfx/local/replica.log | while IFS= read -r line; do
             echo -e "  $line"
         done
     else
-        echo -e "   DFX 日志文件不存在"
+        echo -e "   DFX log file does not exist"
     fi
     
     echo -e ""
     
-    # Canister 日志
-    echo -e "${PURPLE} Canister 日志:${NC}"
+    # Canister logs
+    echo -e "${PURPLE} Canister logs:${NC}"
     if dfx ping > /dev/null 2>&1; then
         for canister in "zerolock_backend" "zerolock_frontend"; do
             if dfx canister id $canister > /dev/null 2>&1; then
@@ -256,15 +256,15 @@ check_logs() {
             fi
         done
     else
-        echo -e "   DFX 网络未运行，无法获取 Canister 日志"
+        echo -e "   DFX network not running, unable to retrieve Canister logs"
     fi
     
     echo -e ""
 }
 
-# 检查端口占用
+# Check port usage
 check_ports() {
-    echo -e "${BLUE} 检查端口占用...${NC}"
+    echo -e "${BLUE} Checking port usage...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
     ports=("3000" "3001" "4943" "8000" "8080")
@@ -273,32 +273,32 @@ check_ports() {
         if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
             pid=$(lsof -Pi :$port -sTCP:LISTEN -t)
             process=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
-            echo -e "   端口 $port: ${RED}被占用${NC} (PID: $pid, 进程: $process)"
+            echo -e "   Port $port: ${RED}Occupied${NC} (PID: $pid, Process: $process)"
         else
-            echo -e "   端口 $port: ${GREEN}空闲${NC}"
+            echo -e "   Port $port: ${GREEN}Free${NC}"
         fi
     done
     
     echo -e ""
 }
 
-# 自动修复常见问题
+# Auto-fix common issues
 auto_fix() {
-    echo -e "${BLUE} 尝试自动修复常见问题...${NC}"
+    echo -e "${BLUE} Trying to auto-fix common issues...${NC}"
     echo -e "${CYAN}===========================================${NC}"
     
-    # 修复前端依赖
+    # Fix frontend dependencies
     if [ ! -d "frontend/node_modules" ]; then
-        echo -e "${YELLOW} 安装前端依赖...${NC}"
+        echo -e "${YELLOW} Installing frontend dependencies...${NC}"
         cd frontend
         npm install
         cd ..
-        echo -e "${GREEN} 前端依赖安装完成${NC}"
+        echo -e "${GREEN} Frontend dependencies installation completed${NC}"
     fi
     
-    # 修复环境变量
+    # Fix environment variables
     if [ ! -f "frontend/.env" ]; then
-        echo -e "${YELLOW} 创建环境变量文件...${NC}"
+        echo -e "${YELLOW} Creating environment variables file...${NC}"
         
         if dfx ping > /dev/null 2>&1; then
             backend_id=$(dfx canister id zerolock_backend 2>/dev/null || echo "uxrrr-q7777-77774-qaaaq-cai")
@@ -326,51 +326,51 @@ VITE_ZEROLOCK_BACKEND_CANISTER_ID=${backend_id}
 VITE_APP_NAME=ZeroLock
 VITE_APP_VERSION=1.0.0
 EOF
-        echo -e "${GREEN} 环境变量文件创建完成${NC}"
+        echo -e "${GREEN} Environment variables file creation completed${NC}"
     fi
     
-    # 修复权限问题
-    echo -e "${YELLOW} 修复文件权限...${NC}"
+    # Fix permission issues
+    echo -e "${YELLOW} Fixing file permissions...${NC}"
     chmod +x start.sh stop.sh debug.sh 2>/dev/null || true
-    echo -e "${GREEN} 权限修复完成${NC}"
+    echo -e "${GREEN} Permission fix completed${NC}"
     
-    echo -e "${GREEN} 自动修复完成${NC}"
+    echo -e "${GREEN} Auto-fix completed${NC}"
 }
 
-# 重置项目
+# Reset project
 reset_project() {
-    echo -e "${RED} 重置项目到初始状态${NC}"
-    echo -e "${YELLOW}这将删除所有本地数据和缓存，是否继续？ (y/N)${NC}"
+    echo -e "${RED} Reset project to initial state${NC}"
+    echo -e "${YELLOW}This will delete all local data and cache, continue? (y/N)${NC}"
     read -r response
     
     if [[ "$response" =~ ^[Yy]$ ]]; then
-        echo -e "${BLUE} 重置项目...${NC}"
+        echo -e "${BLUE} Resetting project...${NC}"
         
-        # 停止所有服务
+        # Stop all services
         ./stop.sh --force 2>/dev/null || true
         
-        # 清理缓存
+        # Clean cache
         rm -rf .dfx/local 2>/dev/null || true
         rm -rf frontend/node_modules 2>/dev/null || true
         rm -rf frontend/dist 2>/dev/null || true
         rm -rf target 2>/dev/null || true
         
-        # 重新安装依赖
+        # Reinstall dependencies
         cd frontend
         npm install
         cd ..
         
-        # 重新构建
+        # Rebuild
         cargo build
         
-        echo -e "${GREEN} 项目重置完成${NC}"
-        echo -e "${BLUE} 现在可以运行 './start.sh' 重新启动项目${NC}"
+        echo -e "${GREEN} Project reset completed${NC}"
+        echo -e "${BLUE} You can now run './start.sh' to restart the project${NC}"
     else
-        echo -e "${YELLOW} 重置操作已取消${NC}"
+        echo -e "${YELLOW} Reset operation cancelled${NC}"
     fi
 }
 
-# 执行所有检查
+# Run all checks
 run_all_checks() {
     check_environment
     check_canisters
@@ -380,7 +380,7 @@ run_all_checks() {
     check_ports
 }
 
-# 主函数
+# Main function
 main() {
     case "$1" in
         --env|-e)
@@ -414,12 +414,12 @@ main() {
             show_help
             ;;
         *)
-            echo -e "${RED} 未知选项: $1${NC}"
+            echo -e "${RED} Unknown option: $1${NC}"
             show_help
             exit 1
             ;;
     esac
 }
 
-# 运行主函数
+# Run main function
 main "$@"
