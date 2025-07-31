@@ -22,6 +22,7 @@ import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatDistanceToNow } from 'date-fns';
+import Footer from '@/components/Footer';
 
 
 interface CompanyDashboardProps {}
@@ -844,6 +845,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

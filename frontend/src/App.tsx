@@ -34,7 +34,7 @@ const App: React.FC = () => {
   // Navigation menu items
   const navigationItems = [
     { name: 'Home', href: '/', icon: HomeIcon, current: true },
-    { name: 'Challenges', href: '/challenges', icon: TrophyIcon, current: false },
+    { name: 'Challenges', href: '/company-dashboard', icon: TrophyIcon, current: false },
     ...(isAuthenticated && userType === 'hacker' ? [
       { name: 'Hacker Dashboard', href: '/hacker-dashboard', icon: UserIcon, current: false }
     ] : []),

@@ -20,6 +20,7 @@ import Input from '@/components/ui/Input';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import Footer from '@/components/Footer';
 
 interface HackerDashboardProps {}
 
@@ -662,6 +663,7 @@ const HackerDashboard: React.FC<HackerDashboardProps> = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

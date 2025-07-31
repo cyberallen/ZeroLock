@@ -20,6 +20,7 @@ import Badge from '@/components/ui/Badge';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import Footer from '@/components/Footer';
 
 interface ChallengeDetailPageProps {}
 
@@ -35,7 +36,7 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
   // 模拟挑战详情数据
   const mockChallengeDetail: ChallengeDetail = {
     id: parseInt(id || '1'),
-    title: 'DeFi协议安全审计挑战',
+    title: 'DeFi Protocol Security Audit Challenge',
     company: 'DeFi Labs',
     companyLogo: '',
     bounty: 10000,
@@ -43,7 +44,7 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
     timeRemaining: 7 * 24 * 60 * 60 * 1000,
     difficulty: 'Hard',
     status: 'Active',
-    description: '我们的DeFi协议处理数百万美元的资产，需要最高级别的安全保障。我们邀请全球顶尖的安全研究人员来测试我们的智能合约，发现潜在的漏洞。',
+    description: 'Our DeFi protocol handles millions of dollars in assets and requires the highest level of security assurance. We invite top security researchers worldwide to test our smart contracts and discover potential vulnerabilities.',
     participantCount: 23,
     createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
     expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -56,16 +57,16 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
     creator: Principal.fromText('rdmx6-jaaaa-aaaaa-aaadq-cai'),
     canisterId: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
     requirements: [
-      '发现智能合约中的重大安全漏洞',
-      '提供完整的攻击向量和概念验证',
-      '漏洞必须是可利用的且影响资金安全',
-      '提交详细的修复建议'
+      'Discover critical security vulnerabilities in smart contracts',
+      'Provide complete attack vectors and proof of concept',
+      'Vulnerabilities must be exploitable and affect fund security',
+      'Submit detailed remediation recommendations'
     ],
     rules: [
-      '不得对生产环境进行实际攻击',
-      '仅在测试网络上进行测试',
-      '遵守负责任的披露原则',
-      '不得泄露漏洞细节给第三方'
+      'No actual attacks on production environment allowed',
+      'Testing only on test networks',
+      'Follow responsible disclosure principles',
+      'Do not disclose vulnerability details to third parties'
     ],
     targetContract: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
     sourceCode: 'https://github.com/defi-labs/protocol',
@@ -85,8 +86,8 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
           submittedAt: Date.now() - 2 * 60 * 60 * 1000,
           status: 'pending',
           severity: 'high',
-          challengeTitle: 'DeFi协议安全审计挑战',
-          description: '发现重入攻击漏洞，可能导致资金流失',
+          challengeTitle: 'DeFi Protocol Security Audit Challenge',
+          description: 'Discovered reentrancy attack vulnerability that could lead to fund loss',
           reward: 0,
         },
       {
@@ -100,8 +101,8 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
           submittedAt: Date.now() - 6 * 60 * 60 * 1000,
           status: 'approved',
           severity: 'medium',
-          challengeTitle: 'DeFi协议安全审计挑战',
-          description: '整数溢出漏洞',
+          challengeTitle: 'DeFi Protocol Security Audit Challenge',
+          description: 'Integer overflow vulnerability',
           reward: 2000,
         },
       {
@@ -115,8 +116,8 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
           submittedAt: Date.now() - 12 * 60 * 60 * 1000,
           status: 'rejected',
           severity: 'low',
-          challengeTitle: 'DeFi协议安全审计挑战',
-          description: '权限检查不足',
+          challengeTitle: 'DeFi Protocol Security Audit Challenge',
+          description: 'Insufficient permission checks',
           reward: 0,
         },
     ],
@@ -531,6 +532,7 @@ const ChallengeDetailPage: React.FC<ChallengeDetailPageProps> = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
