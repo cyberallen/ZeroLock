@@ -521,7 +521,7 @@ pub fn get_monitoring_state(challenge_id: u64) -> ApiResponse<MonitoringState> {
 /// @param challenge_id Challenge identifier
 /// @returns Array of evaluations
 #[query]
-pub fn get_evaluations(challenge_id: u64) -> Vec<Evaluation> {
+pub fn get_evaluations(challenge_id: u64) -> ApiResponse<Vec<Evaluation>> {
     EVALUATIONS.with(|evaluations| {
         let mut challenge_evaluations: Vec<Evaluation> = evaluations
             .borrow()
@@ -537,29 +537,34 @@ pub fn get_evaluations(challenge_id: u64) -> Vec<Evaluation> {
         
         // Sort by timestamp (newest first)
         challenge_evaluations.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-        challenge_evaluations
+        ApiResponse::Ok(challenge_evaluations)
     })
 }
 
 /// Gets balance history for a canister
 /// @param canister_id Canister principal
 /// @param limit Maximum number of snapshots to return
-/// @returns Array of balance snapshots
+/// @returns Array of balance snapshots with pagination
 #[query]
-pub fn get_balance_history(canister_id: Principal, limit: u64) -> Vec<BalanceSnapshot> {
+pub fn get_balance_history(canister_id: Principal, limit: u64) -> ApiResponse<Vec<BalanceSnapshot>> {
+    let validated_limit = match validate_pagination_params(0, limit.min(MAX_BALANCE_HISTORY_LIMIT)) {
+        Ok(l) => l,
+        Err(e) => return ApiResponse::Err(e),
+    };
+    
     let key = StorableString(canister_id.to_text());
     BALANCE_HISTORY.with(|history| {
         match history.borrow().get(&key) {
             Some(snapshots) => {
                 let snapshots = &snapshots.0;
-                let max_limit = std::cmp::min(limit as usize, snapshots.len());
+                let max_limit = std::cmp::min(validated_limit as usize, snapshots.len());
                 if max_limit == 0 {
-                    return Vec::new();
+                    return ApiResponse::Ok(Vec::new());
                 }
                 let start = snapshots.len() - max_limit;
-                snapshots[start..].to_vec()
+                ApiResponse::Ok(snapshots[start..].to_vec())
             }
-            None => Vec::new(),
+            None => ApiResponse::Ok(Vec::new()),
         }
     })
 }
@@ -567,7 +572,7 @@ pub fn get_balance_history(canister_id: Principal, limit: u64) -> Vec<BalanceSna
 /// Gets open disputes
 /// @returns Array of open disputes
 #[query]
-pub fn get_open_disputes() -> Vec<DisputeCase> {
+pub fn get_open_disputes() -> ApiResponse<Vec<DisputeCase>> {
     DISPUTES.with(|disputes| {
         let mut open_disputes: Vec<DisputeCase> = disputes
             .borrow()
@@ -583,7 +588,7 @@ pub fn get_open_disputes() -> Vec<DisputeCase> {
         
         // Sort by creation time (newest first)
         open_disputes.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        open_disputes
+        ApiResponse::Ok(open_disputes)
     })
 }
 
@@ -607,16 +612,18 @@ pub fn set_vault_canister(canister: Principal) -> ApiResponse<()> {
 
 /// Gets configuration information
 #[query]
-pub fn get_config() -> JudgeConfig {
+pub fn get_config() -> ApiResponse<JudgeConfig> {
     let bounty_factory = BOUNTY_FACTORY_CANISTER.with(|bf| *bf.borrow());
     let vault = VAULT_CANISTER.with(|vc| *vc.borrow());
     
-    JudgeConfig {
+    let config = JudgeConfig {
         bounty_factory,
         vault,
         balance_check_interval: BALANCE_CHECK_INTERVAL,
         attack_threshold: ATTACK_THRESHOLD_PERCENTAGE,
-    }
+    };
+    
+    ApiResponse::Ok(config)
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]

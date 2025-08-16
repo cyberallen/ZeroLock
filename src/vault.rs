@@ -599,11 +599,14 @@ pub fn get_lock_info(challenge_id: u64) -> ApiResponse<LockInfo> {
 /// @param user Principal of the user
 /// @param offset Pagination offset
 /// @param limit Maximum number of results
-/// @returns Array of transactions
+/// @returns Paginated transaction history
 #[query]
-pub fn get_transaction_history(user: Principal, offset: u64, limit: u64) -> Vec<Transaction> {
-    let max_limit = 100;
-    let actual_limit = if limit > max_limit { max_limit } else { limit };
+pub fn get_transaction_history(user: Principal, offset: u64, limit: u64) -> ApiResponse<PaginatedResult<Transaction>> {
+    // Validate pagination parameters
+    let validated_limit = match validate_pagination_params(offset, limit.min(MAX_TRANSACTION_HISTORY_LIMIT)) {
+        Ok(l) => l,
+        Err(e) => return ApiResponse::Err(e),
+    };
     
     TRANSACTIONS.with(|transactions| {
         let mut user_transactions: Vec<Transaction> = transactions
@@ -621,21 +624,38 @@ pub fn get_transaction_history(user: Principal, offset: u64, limit: u64) -> Vec<
         // Sort by timestamp (newest first)
         user_transactions.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
         
+        let total = user_transactions.len() as u64;
+        
         // Apply pagination
         let start = offset as usize;
         if start >= user_transactions.len() {
-            return Vec::new();
+            return ApiResponse::Ok(PaginatedResult {
+                data: Vec::new(),
+                total,
+                offset,
+                limit: validated_limit,
+                has_more: false,
+            });
         }
         
-        let end = std::cmp::min(start + actual_limit as usize, user_transactions.len());
-        user_transactions[start..end].to_vec()
+        let end = std::cmp::min(start + validated_limit as usize, user_transactions.len());
+        let data = user_transactions[start..end].to_vec();
+        let has_more = end < user_transactions.len();
+        
+        ApiResponse::Ok(PaginatedResult {
+            data,
+            total,
+            offset,
+            limit: validated_limit,
+            has_more,
+        })
     })
 }
 
 /// Gets vault statistics
 /// @returns Vault statistics
 #[query]
-pub fn get_vault_stats() -> VaultStats {
+pub fn get_vault_stats() -> ApiResponse<VaultStats> {
     let mut stats = VaultStats::default();
     
     LOCKS.with(|locks| {
@@ -656,7 +676,7 @@ pub fn get_vault_stats() -> VaultStats {
         }
     });
     
-    stats
+    ApiResponse::Ok(stats)
 }
 
 /// Adds an authorized canister
@@ -687,9 +707,16 @@ pub fn add_authorized_canister(canister: Principal) -> ApiResponse<()> {
 
 /// Gets list of authorized canisters
 #[query]
-pub fn get_authorized_canisters() -> Vec<Principal> {
+pub fn get_authorized_canisters() -> ApiResponse<Vec<Principal>> {
+    let caller = match check_caller_not_anonymous() {
+        Ok(c) => c,
+        Err(e) => return ApiResponse::Err(e),
+    };
+    
+    // In production, this should be restricted to admin only
     AUTHORIZED_CANISTERS.with(|canisters| {
-        canisters.borrow().iter().map(|(_, principal)| principal.0).collect()
+        let canister_list: Vec<Principal> = canisters.borrow().iter().map(|(_, principal)| principal.0).collect();
+        ApiResponse::Ok(canister_list)
     })
 }
 
@@ -704,8 +731,8 @@ pub fn set_pause_status(paused: bool) -> ApiResponse<()> {
 
 /// Gets pause status
 #[query]
-pub fn is_paused() -> bool {
-    IS_PAUSED.with(|p| *p.borrow())
+pub fn is_paused() -> ApiResponse<bool> {
+    IS_PAUSED.with(|p| ApiResponse::Ok(*p.borrow()))
 }
 
 /// Sets platform fee recipient

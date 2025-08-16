@@ -187,9 +187,12 @@ pub fn list_challenges(
     status: Option<ChallengeStatus>,
     offset: u64,
     limit: u64,
-) -> Vec<Challenge> {
-    let max_limit = 100;
-    let actual_limit = if limit > max_limit { max_limit } else { limit };
+) -> ApiResponse<PaginatedResult<Challenge>> {
+    // Validate pagination parameters
+    let validated_limit = match validate_pagination_params(offset, limit) {
+        Ok(l) => l,
+        Err(e) => return ApiResponse::Err(e),
+    };
     
     CHALLENGES.with(|challenges| {
         let mut all_challenges: Vec<Challenge> = challenges
@@ -206,14 +209,31 @@ pub fn list_challenges(
         // Sort by creation time (newest first)
         all_challenges.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         
+        let total = all_challenges.len() as u64;
+        
         // Apply pagination
         let start = offset as usize;
         if start >= all_challenges.len() {
-            return Vec::new();
+            return ApiResponse::Ok(PaginatedResult {
+                data: Vec::new(),
+                total,
+                offset,
+                limit: validated_limit,
+                has_more: false,
+            });
         }
         
-        let end = std::cmp::min(start + actual_limit as usize, all_challenges.len());
-        all_challenges[start..end].to_vec()
+        let end = std::cmp::min(start + validated_limit as usize, all_challenges.len());
+        let data = all_challenges[start..end].to_vec();
+        let has_more = end < all_challenges.len();
+        
+        ApiResponse::Ok(PaginatedResult {
+            data,
+            total,
+            offset,
+            limit: validated_limit,
+            has_more,
+        })
     })
 }
 
@@ -380,7 +400,7 @@ pub fn expire_challenge(id: u64) -> ApiResponse<()> {
 /// Gets challenge statistics
 /// @returns Statistics object with counts by status
 #[query]
-pub fn get_challenge_stats() -> ChallengeStats {
+pub fn get_challenge_stats() -> ApiResponse<ChallengeStats> {
     CHALLENGES.with(|challenges| {
         let mut stats = ChallengeStats::default();
         
@@ -395,15 +415,23 @@ pub fn get_challenge_stats() -> ChallengeStats {
             }
         }
         
-        stats
+        ApiResponse::Ok(stats)
     })
 }
 
 /// Gets challenges created by a specific company
 /// @param company Principal of the company
-/// @returns Array of challenges
+/// @param offset Pagination offset 
+/// @param limit Maximum number of results
+/// @returns Paginated result of challenges
 #[query]
-pub fn get_company_challenges(company: Principal) -> Vec<Challenge> {
+pub fn get_company_challenges(company: Principal, offset: u64, limit: u64) -> ApiResponse<PaginatedResult<Challenge>> {
+    // Validate pagination parameters
+    let validated_limit = match validate_pagination_params(offset, limit) {
+        Ok(l) => l,
+        Err(e) => return ApiResponse::Err(e),
+    };
+    
     CHALLENGES.with(|challenges| {
         let mut company_challenges: Vec<Challenge> = challenges
             .borrow()
@@ -419,7 +447,32 @@ pub fn get_company_challenges(company: Principal) -> Vec<Challenge> {
         
         // Sort by creation time (newest first)
         company_challenges.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        company_challenges
+        
+        let total = company_challenges.len() as u64;
+        
+        // Apply pagination
+        let start = offset as usize;
+        if start >= company_challenges.len() {
+            return ApiResponse::Ok(PaginatedResult {
+                data: Vec::new(),
+                total,
+                offset,
+                limit: validated_limit,
+                has_more: false,
+            });
+        }
+        
+        let end = std::cmp::min(start + validated_limit as usize, company_challenges.len());
+        let data = company_challenges[start..end].to_vec();
+        let has_more = end < company_challenges.len();
+        
+        ApiResponse::Ok(PaginatedResult {
+            data,
+            total,
+            offset,
+            limit: validated_limit,
+            has_more,
+        })
     })
 }
 
@@ -459,9 +512,19 @@ pub fn add_admin(new_admin: Principal) -> ApiResponse<()> {
 
 /// Gets the list of admin principals
 #[query]
-pub fn get_admins() -> Vec<Principal> {
+pub fn get_admins() -> ApiResponse<Vec<Principal>> {
+    let caller = match check_caller_not_anonymous() {
+        Ok(c) => c,
+        Err(e) => return ApiResponse::Err(e),
+    };
+    
+    if !is_admin(&caller) {
+        return ApiResponse::Err(ZeroLockError::PermissionDenied("Only admins can view admin list".to_string()));
+    }
+    
     ADMINS.with(|admins| {
-        admins.borrow().iter().map(|(_, storable_principal)| storable_principal.0).collect()
+        let admin_list: Vec<Principal> = admins.borrow().iter().map(|(_, storable_principal)| storable_principal.0).collect();
+        ApiResponse::Ok(admin_list)
     })
 }
 
@@ -518,11 +581,7 @@ pub fn remove_admin(admin_to_remove: Principal) -> ApiResponse<()> {
 /// Validates challenge creation request
 fn validate_challenge_request(request: &CreateChallengeRequest) -> Result<(), ZeroLockError> {
     // Validate WASM size
-    if request.wasm_code.len() > MAX_WASM_SIZE {
-        return Err(ZeroLockError::InvalidInput(
-            "WASM code exceeds maximum size limit".to_string()
-        ));
-    }
+    validate_wasm_size(&request.wasm_code)?;
     
     if request.wasm_code.is_empty() {
         return Err(ZeroLockError::InvalidInput(
@@ -548,11 +607,10 @@ fn validate_challenge_request(request: &CreateChallengeRequest) -> Result<(), Ze
     }
     
     // Validate description
-    if request.description.len() > MAX_DESCRIPTION_LENGTH {
-        return Err(ZeroLockError::InvalidInput(
-            "Description exceeds maximum length".to_string()
-        ));
-    }
+    validate_description(&request.description)?;
+    
+    // Validate candid interface
+    validate_candid_interface(&request.candid_interface)?;
     
     // Validate difficulty level
     if !is_valid_difficulty_level(request.difficulty_level) {

@@ -152,6 +152,11 @@ pub enum ZeroLockError {
     InsufficientFunds(String),
     NetworkError(String),
     AlreadyExists(String),
+    PaginationError(String),
+    WasmSizeExceeded(String),
+    TimeRangeError(String),
+    PermissionDenied(String),
+    RateLimitExceeded(String),
 }
 
 // Event types for cross-canister communication
@@ -188,6 +193,17 @@ impl Default for PlatformConfig {
         }
     }
 }
+
+// Platform limits and boundary conditions
+pub const MAX_WASM_SIZE: usize = 2 * 1024 * 1024; // 2MB
+pub const MAX_PAGINATION_LIMIT: u64 = 100;
+pub const MAX_DISPLAY_NAME_LENGTH: usize = 50;
+pub const MAX_DESCRIPTION_LENGTH: usize = 1000;
+pub const MAX_CANDID_INTERFACE_LENGTH: usize = 10000;
+pub const MIN_CHALLENGE_DURATION: i64 = 24 * 60 * 60 * 1_000_000_000; // 1 day in nanoseconds
+pub const MAX_CHALLENGE_DURATION: i64 = 365 * 24 * 60 * 60 * 1_000_000_000; // 1 year in nanoseconds
+pub const MAX_TRANSACTION_HISTORY_LIMIT: u64 = 1000;
+pub const MAX_BALANCE_HISTORY_LIMIT: u64 = 1000;
 
 // Pagination helper
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -454,4 +470,74 @@ pub fn current_time() -> i64 {
 
 pub fn time_from_now(duration_ns: u64) -> i64 {
     current_time() + duration_ns as i64
+}
+
+// Boundary validation functions
+pub fn validate_pagination_params(offset: u64, limit: u64) -> Result<u64, ZeroLockError> {
+    if limit == 0 {
+        return Err(ZeroLockError::PaginationError("Limit cannot be zero".to_string()));
+    }
+    if limit > MAX_PAGINATION_LIMIT {
+        return Err(ZeroLockError::PaginationError(format!("Limit exceeds maximum allowed: {}", MAX_PAGINATION_LIMIT)));
+    }
+    Ok(limit.min(MAX_PAGINATION_LIMIT))
+}
+
+pub fn validate_wasm_size(wasm_code: &[u8]) -> Result<(), ZeroLockError> {
+    if wasm_code.len() > MAX_WASM_SIZE {
+        return Err(ZeroLockError::WasmSizeExceeded(format!("WASM size {} exceeds maximum allowed: {} bytes", wasm_code.len(), MAX_WASM_SIZE)));
+    }
+    Ok(())
+}
+
+pub fn validate_display_name(name: &str) -> Result<(), ZeroLockError> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err(ZeroLockError::InvalidInput("Display name cannot be empty".to_string()));
+    }
+    if trimmed.len() > MAX_DISPLAY_NAME_LENGTH {
+        return Err(ZeroLockError::InvalidInput(format!("Display name exceeds maximum length: {}", MAX_DISPLAY_NAME_LENGTH)));
+    }
+    Ok(())
+}
+
+pub fn validate_description(description: &str) -> Result<(), ZeroLockError> {
+    if description.len() > MAX_DESCRIPTION_LENGTH {
+        return Err(ZeroLockError::InvalidInput(format!("Description exceeds maximum length: {}", MAX_DESCRIPTION_LENGTH)));
+    }
+    Ok(())
+}
+
+pub fn validate_candid_interface(interface: &str) -> Result<(), ZeroLockError> {
+    if interface.len() > MAX_CANDID_INTERFACE_LENGTH {
+        return Err(ZeroLockError::InvalidInput(format!("Candid interface exceeds maximum length: {}", MAX_CANDID_INTERFACE_LENGTH)));
+    }
+    Ok(())
+}
+
+pub fn validate_time_range(start_time: i64, end_time: i64) -> Result<(), ZeroLockError> {
+    let current = current_time();
+    let duration = end_time - start_time;
+    
+    if start_time <= current {
+        return Err(ZeroLockError::TimeRangeError("Start time must be in the future".to_string()));
+    }
+    
+    if duration < MIN_CHALLENGE_DURATION {
+        return Err(ZeroLockError::TimeRangeError(format!("Challenge duration too short, minimum: {} nanoseconds", MIN_CHALLENGE_DURATION)));
+    }
+    
+    if duration > MAX_CHALLENGE_DURATION {
+        return Err(ZeroLockError::TimeRangeError(format!("Challenge duration too long, maximum: {} nanoseconds", MAX_CHALLENGE_DURATION)));
+    }
+    
+    Ok(())
+}
+
+pub fn check_caller_not_anonymous() -> Result<Principal, ZeroLockError> {
+    let caller = ic_cdk::caller();
+    if caller == Principal::anonymous() {
+        return Err(ZeroLockError::Unauthorized("Anonymous callers not allowed".to_string()));
+    }
+    Ok(caller)
 }

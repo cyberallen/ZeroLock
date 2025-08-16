@@ -192,12 +192,15 @@ thread_local! {
  * Registers a new user
  */
 #[update]
-pub fn register_user(role: UserRole) -> Result<(), ZeroLockError> {
-    let caller = caller();
+pub fn register_user(role: UserRole) -> ApiResponse<()> {
+    let caller = match check_caller_not_anonymous() {
+        Ok(c) => c,
+        Err(e) => return ApiResponse::Err(e),
+    };
     
     // Check if user already exists
     if USER_PROFILES.with(|profiles| profiles.borrow().contains_key(&StorablePrincipal(caller))) {
-        return Err(ZeroLockError::AlreadyExists("User already registered".to_string()));
+        return ApiResponse::Err(ZeroLockError::AlreadyExists("User already registered".to_string()));
     }
     
     let current_time = time() as i64;
@@ -216,28 +219,27 @@ pub fn register_user(role: UserRole) -> Result<(), ZeroLockError> {
     });
     
     ic_cdk::println!("User registered: {:?} as {:?}", caller, role);
-    Ok(())
+    ApiResponse::Ok(())
 }
 
 /**
  * Sets display name for a user
  */
 #[update]
-pub fn set_display_name(name: String) -> Result<(), ZeroLockError> {
-    let caller = caller();
+pub fn set_display_name(name: String) -> ApiResponse<()> {
+    let caller = match check_caller_not_anonymous() {
+        Ok(c) => c,
+        Err(e) => return ApiResponse::Err(e),
+    };
     
-    // Validate name length
-    if name.len() > 50 {
-        return Err(ZeroLockError::InvalidInput("Display name too long".to_string()));
-    }
-    
-    if name.trim().is_empty() {
-        return Err(ZeroLockError::InvalidInput("Display name cannot be empty".to_string()));
+    // Validate name
+    if let Err(e) = validate_display_name(&name) {
+        return ApiResponse::Err(e);
     }
     
     // Check if user exists
     if !USER_PROFILES.with(|profiles| profiles.borrow().contains_key(&StorablePrincipal(caller))) {
-        return Err(ZeroLockError::NotFound("User not registered".to_string()));
+        return ApiResponse::Err(ZeroLockError::NotFound("User not registered".to_string()));
     }
     
     DISPLAY_NAMES.with(|names| {
@@ -245,7 +247,7 @@ pub fn set_display_name(name: String) -> Result<(), ZeroLockError> {
     });
     
     ic_cdk::println!("Display name set: {} for {:?}", name, caller);
-    Ok(())
+    ApiResponse::Ok(())
 }
 
 /**
