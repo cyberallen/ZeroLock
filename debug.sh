@@ -302,10 +302,10 @@ auto_fix() {
         
         if dfx ping > /dev/null 2>&1; then
             backend_id=$(dfx canister id zerolock_backend 2>/dev/null || echo "uxrrr-q7777-77774-qaaaq-cai")
-            ii_id=$(dfx canister id internet_identity 2>/dev/null || echo "umunu-kh777-77774-qaaca-cai")
+            ii_id=$(dfx canister id internet_identity 2>/dev/null || echo "uzt4z-lp777-77774-qaabq-cai")
         else
             backend_id="uxrrr-q7777-77774-qaaaq-cai"
-            ii_id="umunu-kh777-77774-qaaca-cai"
+            ii_id="uzt4z-lp777-77774-qaabq-cai"
         fi
         
         cat > frontend/.env << EOF
@@ -317,7 +317,7 @@ VITE_IC_HOST=http://localhost:4943
 
 # Internet Identity Configuration
 VITE_INTERNET_IDENTITY_CANISTER_ID=${ii_id}
-VITE_INTERNET_IDENTITY_URL=http://localhost:4943/?canisterId=${ii_id}
+VITE_INTERNET_IDENTITY_URL=http://{ii_id}.localhost:4943
 
 # Backend Canister Configuration
 VITE_ZEROLOCK_BACKEND_CANISTER_ID=${backend_id}

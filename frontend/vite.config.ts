@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import environment from 'vite-plugin-environment';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), environment('all', { prefix: 'CANISTER_' }), environment('all', { prefix: 'DFX_' })],
+  envDir: '../',
+  define: {
+    'process.env': process.env
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

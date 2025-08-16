@@ -241,7 +241,7 @@ update_env_vars() {
     if dfx canister id internet_identity > /dev/null 2>&1; then
         II_ID=$(dfx canister id internet_identity)
     else
-        II_ID="umunu-kh777-77774-qaaca-cai"  # Use current configured ID
+        II_ID="uzt4z-lp777-77774-qaabq-cai"  # Use current configured ID
     fi
     
     # Create environment variables file
@@ -254,8 +254,7 @@ VITE_IC_HOST=http://localhost:4943
 
 # Internet Identity Configuration
 VITE_INTERNET_IDENTITY_CANISTER_ID=${II_ID}
-VITE_INTERNET_IDENTITY_URL=http://localhost:4943/?canisterId=${II_ID}
-
+VITE_INTERNET_IDENTITY_URL=http://${II_ID}.localhost:4943
 # Backend Canister Configuration
 VITE_ZEROLOCK_BACKEND_CANISTER_ID=${BACKEND_ID}
 

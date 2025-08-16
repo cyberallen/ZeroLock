@@ -43,3 +43,4 @@ yarn-error.log*
 .dfx/
 .vercel/
 .baks/
+.github/copilot-instructions.md
