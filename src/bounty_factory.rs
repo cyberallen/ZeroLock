@@ -465,6 +465,54 @@ pub fn get_admins() -> Vec<Principal> {
     })
 }
 
+/// Removes an admin principal
+#[update]
+pub fn remove_admin(admin_to_remove: Principal) -> ApiResponse<()> {
+    let caller = ic_cdk::caller();
+    
+    // Only existing admins can remove other admins
+    if !is_admin(&caller) {
+        return ApiResponse::Err(ZeroLockError::Unauthorized(
+            "Only admins can remove other admins".to_string()
+        ));
+    }
+    
+    if caller == admin_to_remove {
+        return ApiResponse::Err(ZeroLockError::InvalidInput(
+            "Cannot remove yourself as admin".to_string()
+        ));
+    }
+    
+    // Find and remove the admin
+    let removed = ADMINS.with(|admins| {
+        let mut admins = admins.borrow_mut();
+        let mut to_remove: Option<u64> = None;
+        
+        for (id, storable_principal) in admins.iter() {
+            if storable_principal.0 == admin_to_remove {
+                to_remove = Some(id);
+                break;
+            }
+        }
+        
+        if let Some(id) = to_remove {
+            admins.remove(&id);
+            true
+        } else {
+            false
+        }
+    });
+    
+    if removed {
+        ic_cdk::println!("Admin removed: {}", admin_to_remove.to_text());
+        ApiResponse::Ok(())
+    } else {
+        ApiResponse::Err(ZeroLockError::NotFound(
+            "Admin not found".to_string()
+        ))
+    }
+}
+
 // Private helper functions
 
 /// Validates challenge creation request

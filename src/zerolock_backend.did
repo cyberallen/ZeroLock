@@ -166,6 +166,106 @@ type UserStats = record {
   new_users_last_week : nat64;
 };
 
+type ChallengeStats = record {
+  total : nat64;
+  active : nat64;
+  completed : nat64;
+  expired : nat64;
+  cancelled : nat64;
+};
+
+type CreateChallengeRequest = record {
+  wasm_code : vec nat8;
+  candid_interface : text;
+  bounty_amount : nat64;
+  duration_hours : nat64;
+  token_type : TokenType;
+  description : text;
+  difficulty_level : nat8;
+};
+
+type VaultStats = record {
+  total_locked : nat64;
+  total_transactions : nat64;
+  active_locks : nat64;
+  total_volume : nat64;
+};
+
+type MonitoringState = record {
+  challenge_id : nat64;
+  target_canister : principal;
+  initial_balance : nat64;
+  current_balance : nat64;
+  last_check : int64;
+  monitoring_active : bool;
+  attack_detected : bool;
+};
+
+type BalanceSnapshot = record {
+  canister_id : principal;
+  balance : nat64;
+  timestamp : int64;
+  block_height : opt nat64;
+};
+
+type DisputeCase = record {
+  id : nat64;
+  challenge_id : nat64;
+  attack_attempt_id : nat64;
+  disputer : principal;
+  reason : text;
+  evidence : vec vec nat8;
+  status : DisputeStatus;
+  created_at : int64;
+  resolved_at : opt int64;
+  resolution : opt text;
+};
+
+type DisputeStatus = variant {
+  Open;
+  UnderReview;
+  Resolved;
+  Rejected;
+};
+
+type LockRequest = record {
+  challenge_id : nat64;
+  company : principal;
+  amount : nat64;
+  token_type : TokenType;
+  duration : int64;
+};
+
+type UnlockReason = variant {
+  BountyPayout : principal;
+  ChallengeExpired;
+  ChallengeCancelled;
+  AdminOverride : text;
+};
+
+type UnlockRequest = record {
+  challenge_id : nat64;
+  recipient : principal;
+  amount : nat64;
+  reason : UnlockReason;
+};
+
+type LockStatus = variant {
+  Active;
+  Released;
+  Expired;
+};
+
+type LockInfo = record {
+  challenge_id : nat64;
+  company : principal;
+  amount : nat64;
+  token_type : TokenType;
+  locked_at : int64;
+  expires_at : int64;
+  status : LockStatus;
+};
+
 type ZeroLockError = variant {
   NotFound : text;
   Unauthorized : text;
@@ -189,57 +289,67 @@ type BalanceResult = variant { Ok : Balance; Err : ZeroLockError };
 type BalancesResult = variant { Ok : vec Balance; Err : ZeroLockError };
 type TransactionsResult = variant { Ok : vec Transaction; Err : ZeroLockError };
 type UserProfileResult = variant { Ok : record { UserProfile; opt text; vec Achievement; vec nat64 }; Err : ZeroLockError };
+type ChallengeStatsResult = variant { Ok : ChallengeStats; Err : ZeroLockError };
+type VaultStatsResult = variant { Ok : VaultStats; Err : ZeroLockError };
+type MonitoringStateResult = variant { Ok : MonitoringState; Err : ZeroLockError };
+type LockInfoResult = variant { Ok : LockInfo; Err : ZeroLockError };
+type EvaluationResult = variant { Ok : Evaluation; Err : ZeroLockError };
+type EvaluationsResult = variant { Ok : vec Evaluation; Err : ZeroLockError };
+type DisputesResult = variant { Ok : vec DisputeCase; Err : ZeroLockError };
+type UserStatsResult = variant { Ok : UserStats; Err : ZeroLockError };
+type PrincipalsResult = variant { Ok : vec principal; Err : ZeroLockError };
+type BalanceSnapshotsResult = variant { Ok : vec BalanceSnapshot; Err : ZeroLockError };
 
 service : {
-  // BountyFactory functions
-  create_challenge : (text, vec nat8, text, nat64, TokenType, nat64, nat8) -> (IdResult);
+  // ===== BountyFactory functions =====
+  create_challenge : (CreateChallengeRequest) -> (IdResult);
   get_challenge : (nat64) -> (ChallengeResult) query;
-  get_challenges : () -> (ChallengesResult) query;
-  get_challenges_by_company : (principal) -> (ChallengesResult) query;
-  activate_challenge : (nat64) -> (Result);
-  complete_challenge : (nat64, principal) -> (Result);
-  cancel_challenge : (nat64) -> (Result);
-  get_platform_stats : () -> (PlatformStatsResult) query;
-  get_challenge_count : () -> (nat64) query;
-  set_admin : (principal) -> (Result);
-  
-  // Vault functions
-  deposit : (nat64, TokenType) -> (Result);
-  withdraw : (nat64, TokenType) -> (Result);
-  lock_funds : (nat64, nat64, TokenType) -> (Result);
+  list_challenges : (opt ChallengeStatus, nat64, nat64) -> (vec Challenge) query;
+  update_challenge_status : (nat64, ChallengeStatus) -> (Result);
+  deploy_target_canister : (nat64) -> (variant { Ok : principal; Err : ZeroLockError });
+  expire_challenge : (nat64) -> (Result);
+  get_challenge_stats : () -> (ChallengeStats) query;
+  get_company_challenges : (principal) -> (vec Challenge) query;
+  add_admin : (principal) -> (Result);
+  remove_admin : (principal) -> (Result);
+  get_admins : () -> (vec principal) query;
+
+  // ===== Vault functions =====
+  deposit : (TokenType, nat64) -> (IdResult);
+  lock_funds : (LockRequest) -> (Result);
+  unlock_funds : (UnlockRequest) -> (Result);
   get_balance : (principal, TokenType) -> (BalanceResult) query;
-  get_all_balances : (principal) -> (BalancesResult) query;
-  get_transaction_history : (principal) -> (TransactionsResult) query;
-  get_locked_funds : (nat64) -> (BalanceResult) query;
+  get_lock_info : (nat64) -> (LockInfoResult) query;
+  get_transaction_history : (principal, nat64, nat64) -> (vec Transaction) query;
+  get_vault_stats : () -> (VaultStats) query;
   add_authorized_canister : (principal) -> (Result);
-  get_vault_stats : () -> (record { total_locked : nat64; total_transactions : nat64 }) query;
-  set_vault_admin : (principal) -> (Result);
-  get_transaction_count : () -> (nat64) query;
-  set_platform_fee : (nat64) -> (Result);
-  
-  // Judge functions
-  start_monitoring : (nat64) -> (Result);
-  submit_attack_attempt : (nat64, vec nat8, opt vec nat8) -> (IdResult);
-  evaluate_attack : (nat64, JudgeDecision, text) -> (Result);
-  create_dispute : (nat64, text) -> (Result);
+  get_authorized_canisters : () -> (vec principal) query;
+  set_pause_status : (bool) -> (Result);
+  is_paused : () -> (bool) query;
+  set_platform_fee_recipient : (principal) -> (Result);
+
+  // ===== Judge functions =====
+  start_monitoring : (nat64, principal) -> (Result);
+  stop_monitoring : (nat64) -> (Result);
+  evaluate_attack : (nat64, AttackAttempt) -> (EvaluationResult);
+  create_dispute : (nat64, nat64, text, vec vec nat8) -> (IdResult);
   resolve_dispute : (nat64, JudgeDecision, text) -> (Result);
+  get_monitoring_state : (nat64) -> (MonitoringStateResult) query;
   get_evaluations : (nat64) -> (vec Evaluation) query;
-  get_monitoring_status : (nat64) -> (opt text) query;
-  get_disputes : (nat64) -> (vec record { nat64; text; int64; opt JudgeDecision }) query;
-  get_attack_attempts : (nat64) -> (AttackAttemptsResult) query;
+  get_balance_history : (principal, nat64) -> (vec BalanceSnapshot) query;
+  get_open_disputes : () -> (vec DisputeCase) query;
+  set_bounty_factory : (principal) -> (Result);
   set_vault_canister : (principal) -> (Result);
-  set_bounty_factory_canister : (principal) -> (Result);
-  get_judge_stats : () -> (record { total_evaluations : nat64; pending_disputes : nat64 }) query;
-  
-  // Leaderboard functions
-  register_user : (text, UserRole) -> (Result);
-  update_user_stats : (principal, nat64, nat64) -> (Result);
-  award_achievement : (principal, AchievementType, opt nat64) -> (Result);
-  set_display_name : (text) -> (Result);
+
+  // ===== Leaderboard functions =====
+  register_user : (UserRole) -> (variant { Ok; Err : ZeroLockError });
+  set_display_name : (text) -> (variant { Ok; Err : ZeroLockError });
+  record_successful_attack : (principal, nat64, nat64, TokenType) -> (variant { Ok; Err : ZeroLockError });
+  record_challenge_creation : (principal, nat64, TokenType) -> (variant { Ok; Err : ZeroLockError });
   get_hacker_leaderboard : (nat64) -> (vec LeaderboardEntry) query;
   get_company_leaderboard : (nat64) -> (vec CompanyLeaderboardEntry) query;
-  get_user_profile : (principal) -> (UserProfileResult) query;
-  get_platform_stats_leaderboard : () -> (PlatformStats) query;
+  get_user_profile : (principal) -> (variant { Ok : record { UserProfile; opt text; vec Achievement; vec nat64 }; Err : ZeroLockError }) query;
+  get_platform_stats : () -> (PlatformStats) query;
   get_user_stats : () -> (UserStats) query;
-  set_bounty_factory_for_leaderboard : (principal) -> (Result);
+  set_bounty_factory_for_leaderboard : (principal) -> (variant { Ok; Err : ZeroLockError });
 }
